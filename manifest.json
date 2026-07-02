@@ -1,0 +1,18 @@
+{
+  "name": "Great Lakes Invitational 2026",
+  "short_name": "GLI 2026",
+  "description": "Great Lakes Invitational Golf Tournament",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "gli-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

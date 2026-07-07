@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!-- v2.1 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -778,22 +778,34 @@ const ROUNDS = [
   {
     id:'round1', name:'Round 1', course:'The Crown Golf Club',
     date:'Thu Aug 27', format:'match_play', formatLabel:'2v2 Match Play',
-    par:[4,3,4,5,4,3,4,4,5, 4,3,5,4,4,3,4,4,5]
+    tee:'Blue', rating:'69.5', slope:'124',
+    // Blue tee: Par 72. Par 3s: holes 3, 9, 12, 16
+    par:    [5,  4,  3,  5,  4,  4,  4,  4,  3,   4,  4,  3,  4,  5,  4,  3,  5,  4],
+    yardage:[495,379,128,485,370,404,336,349,165, 363,380,145,373,526,278,141,506,357]
   },
   {
     id:'round2', name:'Round 2', course:'Sugar Loaf — Old Course',
     date:'Fri Aug 28', format:'stableford', formatLabel:'Stableford Combined',
-    par:[4,4,3,5,4,3,4,5,4, 3,5,4,4,3,4,5,4,4]
+    tee:'White', rating:'69.9', slope:'118',
+    // White tee: Par 72. Par 3s: holes 4, 6, 16, 18
+    par:    [4,  4,  4,  3,  4,  3,  5,  4,  5,   4,  4,  5,  4,  4,  4,  3,  5,  3],
+    yardage:[405,320,316,141,402,162,465,335,460, 382,355,478,293,401,350,135,540,184]
   },
   {
     id:'round3', name:'Round 3', course:'Manitou Passage',
     date:'Fri Aug 28', format:'alt_shot', formatLabel:'Alt-Shot / Scramble',
-    par:[4,5,3,4,4,3,5,4,4, 3,4,5,4,3,4,5,4,4]
+    tee:'Blue', rating:'70.4', slope:'131',
+    // Blue tee: Par 71. Par 3s: holes 3, 7, 13, 15, 17
+    par:    [4,  4,  3,  4,  5,  4,  3,  5,  4,   5,  4,  4,  3,  4,  3,  4,  3,  5],
+    yardage:[405,318,166,376,517,400,182,555,376, 530,343,414,180,343,139,397,144,472]
   },
   {
     id:'round4', name:'Round 4', course:'Grand Traverse Resort',
     date:'Sat Aug 29', format:'singles_match', formatLabel:'Singles Match Play',
-    par:[4,3,5,4,4,3,5,4,4, 4,3,4,5,4,3,5,4,4]
+    tee:'Blue', rating:'71.2', slope:'136',
+    // Blue tee: Par 70. Par 3s: holes 6, 8, 10, 16
+    par:    [4,  5,  4,  4,  4,  3,  4,  3,  5,   3,  4,  4,  4,  4,  4,  3,  4,  4],
+    yardage:[362,485,400,452,409,150,383,190,501, 215,362,306,332,370,396,161,326,404]
   }
 ];
 
@@ -821,6 +833,8 @@ let currentRoundId = null;
 let currentMatchupId = null;
 let selectedUserId = null;
 let editingMatchupRoundId = null;
+let currentScorecardHole = 1;
+let scorecardViewMode = 'hole'; // 'hole' | 'table'
 
 // ═══════════════════════════════════════════════════
 // PERSISTENCE
@@ -849,12 +863,13 @@ function saveState() {
 }
 
 function loadState() {
-  state.players  = load('players', {});
-  state.matchups = load('matchups', {});
-  state.scores   = load('scores', {});
-  state.ctp      = load('ctp', {});
-  state.messages = load('messages', []);
-  currentUser    = load('currentUser', null);
+  state.players          = load('players', {});
+  state.matchups         = load('matchups', {});
+  state.scores           = load('scores', {});
+  state.ctp              = load('ctp', {});
+  state.messages         = load('messages', []);
+  state.completedMatches = load('completedMatches', {});
+  currentUser            = load('currentUser', null);
 }
 
 // ═══════════════════════════════════════════════════
@@ -877,6 +892,16 @@ function connectFirebase() {
   }
 }
 
+function refreshActiveScorecardIfOpen() {
+  // If a scorecard is currently open, re-render it with fresh state
+  if (!currentRoundId || !currentMatchupId) return;
+  const round = ROUNDS.find(r=>r.id===currentRoundId);
+  const matchup = state.matchups[currentRoundId]?.[currentMatchupId];
+  if (round && matchup && document.getElementById('sc-card-view')?.style.display !== 'none') {
+    renderScorecardView(round, matchup);
+  }
+}
+
 function setupFirebaseListeners() {
   if (!firebaseDb) return;
   firebaseDb.ref('gli26/players').on('value', snap => {
@@ -885,15 +910,20 @@ function setupFirebaseListeners() {
   });
   firebaseDb.ref('gli26/matchups').on('value', snap => {
     const v = snap.val();
-    if (v) { state.matchups = v; }
+    if (v) { state.matchups = v; renderLeaderboard(); }
   });
   firebaseDb.ref('gli26/scores').on('value', snap => {
     const v = snap.val();
-    if (v) { state.scores = v; updateHeaderScores(); renderLeaderboard(); }
+    if (v) {
+      state.scores = v;
+      updateHeaderScores();
+      renderLeaderboard();
+      refreshActiveScorecardIfOpen();
+    }
   });
   firebaseDb.ref('gli26/ctp').on('value', snap => {
     const v = snap.val();
-    if (v) { state.ctp = v; updateHeaderScores(); }
+    if (v) { state.ctp = v; updateHeaderScores(); renderLeaderboard(); }
   });
   firebaseDb.ref('gli26/messages').on('value', snap => {
     const v = snap.val();
@@ -901,6 +931,14 @@ function setupFirebaseListeners() {
       if (Array.isArray(v)) state.messages = v.filter(Boolean);
       else state.messages = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
+    }
+  });
+  firebaseDb.ref('gli26/completedMatches').on('value', snap => {
+    const v = snap.val();
+    if (v) {
+      state.completedMatches = v;
+      renderLeaderboard();
+      refreshActiveScorecardIfOpen();
     }
   });
 }
@@ -1222,6 +1260,8 @@ function stablefordPoints(score, par) {
 function openScorecard(roundId, matchupId) {
   currentRoundId = roundId;
   currentMatchupId = matchupId;
+  currentScorecardHole = 1;
+  scorecardViewMode = 'hole';
   const round = ROUNDS.find(r=>r.id===roundId);
   const matchup = state.matchups[roundId]?.[matchupId];
   if (!matchup) return;
@@ -1231,6 +1271,166 @@ function openScorecard(roundId, matchupId) {
   document.getElementById('sc-card-view').style.display = 'block';
 
   renderScorecardView(round, matchup);
+}
+
+// ─── helpers shared by both scorecard views ───────────────────────────────
+function isMatchComplete(matchup, scores) {
+  // A match is complete when every player has a score on every hole
+  const allIds = [...(matchup.michigan||[]),...(matchup.superior||[])];
+  if (!allIds.length) return false;
+  for (let h=1; h<=18; h++) {
+    const hole = scores.holes?.[h]||{};
+    if (allIds.some(id => !hole[id] && hole[id]!==0)) return false;
+  }
+  return true;
+}
+
+function endMatch(matchupId) {
+  state.completedMatches[matchupId] = true;
+  save('completedMatches', state.completedMatches);
+  renderLeaderboard();
+  showToast('Match finalized ✓');
+  // Re-render to remove the button
+  const round = ROUNDS.find(r=>r.id===currentRoundId);
+  const matchup = state.matchups[currentRoundId]?.[matchupId];
+  if (round && matchup) renderScorecardView(round, matchup);
+}
+
+function toggleScorecardView() {
+  scorecardViewMode = scorecardViewMode === 'hole' ? 'table' : 'hole';
+  const round = ROUNDS.find(r=>r.id===currentRoundId);
+  const matchup = state.matchups[currentRoundId]?.[currentMatchupId];
+  if (round && matchup) renderScorecardView(round, matchup);
+}
+
+function navigateHole(dir) {
+  currentScorecardHole = Math.max(1, Math.min(18, currentScorecardHole + dir));
+  const round = ROUNDS.find(r=>r.id===currentRoundId);
+  const matchup = state.matchups[currentRoundId]?.[currentMatchupId];
+  if (round && matchup) renderHoleCard(round, matchup);
+}
+
+function renderHoleCard(round, matchup) {
+  const h = currentScorecardHole;
+  const par = round.par[h-1];
+  const yd  = round.yardage ? round.yardage[h-1] : null;
+  const isPar3 = par === 3;
+  const scores  = state.scores[matchup.id] || {holes:{}};
+  const holeData= scores.holes?.[h] || {};
+  const isStableford = round.format === 'stableford';
+  const isAltShot    = round.format === 'alt_shot';
+  const TEE_COLOR_MAP = {Blue:'#4a9ede',White:'#e8e8e8',Red:'#cc3333',Gold:'#c9a84c',Green:'#2a7a3b'};
+  const teeColor = TEE_COLOR_MAP[round.tee] || '#888';
+
+  const mPlayers = (matchup.michigan||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'michigan'}));
+  const sPlayers = (matchup.superior||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'superior'}));
+  const playerColumns = isAltShot
+    ? [{id:'team_michigan',name:'Michigan',team:'michigan'},{id:'team_superior',name:'Superior',team:'superior'}]
+    : [...mPlayers,...sPlayers];
+
+  // Score row per player
+  const scoreRows = playerColumns.map(p => {
+    const val = holeData[p.id]||'';
+    const numVal = Number(val);
+    let cls='', label='';
+    if(val&&!isNaN(numVal)){
+      const d=numVal-par;
+      if(d<=-2){cls='eagle';label='Eagle';}
+      else if(d===-1){cls='birdie';label='Birdie';}
+      else if(d===0){label='Par';}
+      else if(d===1){cls='bogey';label='Bogey';}
+      else if(d>=2){cls='double';label='Double+';}
+    }
+    const teamCol = p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:${teamCol};">${p.name}</div>
+          ${label?`<div style="font-size:10px;color:var(--text3);margin-top:2px;">${label}</div>`:''}
+        </div>
+        <input type="number" class="score-input ${cls}" min="1" max="15" value="${val}"
+          style="width:48px;height:42px;font-size:20px;border-radius:8px;"
+          oninput="setScore('${matchup.id}','${h}','${p.id}',this.value);renderHoleCard(ROUNDS.find(r=>r.id==='${round.id}'),state.matchups['${round.id}']['${matchup.id}'])"
+          onchange="updateScoreStyle(this,${par})">
+      </div>`;
+  }).join('');
+
+  // Match status after this hole
+  const statusText = getMPResultText(round, matchup, scores);
+
+  // Hole-indicator dots (1–18)
+  const dots = Array.from({length:18},(_,i)=>{
+    const hNum=i+1;
+    const holeScores=scores.holes?.[hNum]||{};
+    const hasScore=playerColumns.some(p=>holeScores[p.id]!==undefined&&holeScores[p.id]!=='');
+    const isCur=hNum===h;
+    return `<div onclick="currentScorecardHole=${hNum};renderHoleCard(ROUNDS.find(r=>r.id==='${round.id}'),state.matchups['${round.id}']['${matchup.id}'])"
+      style="width:${isCur?'22px':'14px'};height:${isCur?'22px':'14px'};border-radius:50%;
+        background:${isCur?'var(--gold)':hasScore?'var(--michigan-light)':'var(--bg3)'};
+        border:2px solid ${isCur?'var(--gold)':hasScore?'var(--michigan-light)':'var(--border)'};
+        display:flex;align-items:center;justify-content:center;cursor:pointer;
+        font-size:8px;font-weight:800;color:${isCur?'#000':'var(--text3)'};">
+        ${isCur?hNum:''}
+      </div>`;
+  }).join('');
+
+  // Hole image placeholder — styled SVG
+  const holeSvg = `
+    <svg viewBox="0 0 360 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;">
+      <defs>
+        <linearGradient id="sky${h}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1a3a2a"/>
+          <stop offset="100%" stop-color="#2d5a3d"/>
+        </linearGradient>
+        <linearGradient id="fairway${h}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3d7a4a"/>
+          <stop offset="100%" stop-color="#2a5c35"/>
+        </linearGradient>
+      </defs>
+      <rect width="360" height="160" fill="url(#sky${h})"/>
+      <!-- Fairway -->
+      <ellipse cx="180" cy="155" rx="140" ry="60" fill="url(#fairway${h})" opacity="0.8"/>
+      <!-- Tee box -->
+      <rect x="160" y="130" width="40" height="16" rx="3" fill="#4a8c55" stroke="#5aaa65" stroke-width="1"/>
+      <!-- Flag pin -->
+      <line x1="180" y1="62" x2="180" y2="100" stroke="#ccc" stroke-width="2"/>
+      <polygon points="180,62 200,70 180,78" fill="${teeColor}" opacity="0.9"/>
+      <!-- Hole number -->
+      <text x="180" y="48" text-anchor="middle" font-size="28" font-weight="900" fill="rgba(255,255,255,0.15)" font-family="sans-serif">${h}</text>
+      <!-- Details strip -->
+      <rect x="0" y="120" width="360" height="40" fill="rgba(0,0,0,0.45)"/>
+      <text x="20" y="145" font-size="13" font-weight="700" fill="white" font-family="sans-serif">Hole ${h}</text>
+      <text x="20" y="157" font-size="10" fill="${teeColor}" font-family="sans-serif" opacity="0.9">${round.tee||''} Tees</text>
+      <text x="180" y="142" text-anchor="middle" font-size="20" font-weight="900" fill="${isPar3?'#c9a84c':'white'}" font-family="sans-serif">Par ${par}</text>
+      ${yd?`<text x="340" y="142" text-anchor="end" font-size="18" font-weight="800" fill="white" font-family="sans-serif">${yd}</text>
+      <text x="340" y="157" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.6)" font-family="sans-serif">yards</text>`:''}
+      ${isPar3?'<text x="180" y="160" text-anchor="middle" font-size="9" fill="#c9a84c" font-family="sans-serif">⛳ Par 3</text>':''}
+    </svg>`;
+
+  document.getElementById('sc-hole-view').innerHTML = `
+    <!-- Hole dots nav -->
+    <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:10px;">
+      ${dots}
+    </div>
+    <!-- Hole image -->
+    <div style="margin-bottom:14px;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+      ${holeSvg}
+    </div>
+    <!-- Scores -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Enter Scores</div>
+      ${scoreRows}
+    </div>
+    <!-- Match status -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;text-align:center;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Match Status</div>
+      <div style="font-size:14px;font-weight:700;">${statusText}</div>
+    </div>
+    <!-- Prev / Next -->
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <button class="btn btn-ghost" style="flex:1;font-size:15px;" onclick="navigateHole(-1)" ${h===1?'disabled':''}>← Hole ${h>1?h-1:1}</button>
+      <button class="btn btn-ghost" style="flex:1;font-size:15px;" onclick="navigateHole(1)" ${h===18?'disabled':''}>Hole ${h<18?h+1:18} →</button>
+    </div>`;
 }
 
 function renderScorecardView(round, matchup) {
@@ -1251,9 +1451,13 @@ function renderScorecardView(round, matchup) {
         team: matchup.michigan?.includes(p.id) ? 'michigan' : 'superior'
       }));
 
+  const TEE_COLOR_MAP = {Blue:'#4a9ede',White:'#e8e8e8',Red:'#cc3333',Gold:'#c9a84c',Green:'#2a7a3b'};
+  const teeColor = TEE_COLOR_MAP[round.tee] || 'var(--text2)';
+
   let thead = `<tr>
     <th style="min-width:30px;">Hole</th>
     <th style="min-width:28px;">Par</th>
+    <th style="min-width:36px;color:${teeColor};">${round.tee||'Yd'}</th>
     ${playerColumns.map(p=>`<th style="color:${p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)'};min-width:50px;">${shortName(p.name)}</th>`).join('')}
     ${!isStableford&&!isAltShot?'<th style="min-width:50px;">Result</th>':''}
     ${isStableford?'<th style="min-width:40px;">Pts</th>':''}
@@ -1282,9 +1486,11 @@ function renderScorecardView(round, matchup) {
     }
 
     if (h===9) {
+      const outYd = (round.yardage||[]).slice(0,9).reduce((a,b)=>a+b,0);
       // Add subtotal row after hole 9
       tbody += `<tr style="background:var(--bg3);">
         <td colspan="2" style="font-size:10px;font-weight:700;color:var(--text2);padding:4px;">OUT</td>
+        <td style="font-size:10px;color:${teeColor};font-weight:700;">${outYd||''}</td>
         ${playerColumns.map(p=>{
           let out=0;
           for(let i=1;i<=9;i++){const v=Number((scores.holes?.[i]||{})[p.id]);if(!isNaN(v)&&v>0)out+=v;}
@@ -1305,9 +1511,12 @@ function renderScorecardView(round, matchup) {
       ptsCell = `<td style="font-size:11px;color:var(--gold);">${holeData[firstPid]?stablefordPoints(s,par):''}</td>`;
     }
 
-    tbody += `<tr>
-      <td class="hole-num">${h}</td>
-      <td class="par-cell">${par}</td>
+    const isPar3 = par === 3;
+    const yd = round.yardage ? round.yardage[h-1] : '';
+    tbody += `<tr${isPar3?' style="background:rgba(212,175,55,0.07);"':''}>
+      <td class="hole-num" style="${isPar3?'color:var(--gold);font-weight:800;':''}">${h}${isPar3?'<span style="font-size:8px;vertical-align:super;color:var(--gold);">⛳</span>':''}</td>
+      <td class="par-cell" style="${isPar3?'color:var(--gold);font-weight:700;':''}">${par}</td>
+      <td style="font-size:11px;color:${teeColor};opacity:0.85;">${yd}</td>
       ${playerColumns.map(p => {
         const val = holeData[p.id]||'';
         const numVal = Number(val);
@@ -1330,8 +1539,10 @@ function renderScorecardView(round, matchup) {
     : sWins > mWins
       ? '<span style="color:var(--superior-light)">S ' + sWins + 'W</span>'
       : '<span style="color:var(--text3)">AS</span>';
-    const totalRow = `<tr style="background:var(--bg3);font-weight:800;">
+  const totalYd = (round.yardage||[]).reduce((a,b)=>a+b,0);
+  const totalRow = `<tr style="background:var(--bg3);font-weight:800;">
     <td colspan="2" style="font-size:10px;font-weight:700;color:var(--text2);padding:4px;">TOTAL</td>
+    <td style="font-size:10px;color:${teeColor};font-weight:700;">${totalYd||''}</td>
     ${playerColumns.map(p=>{
       let tot=0;
       for(let i=1;i<=18;i++){const v=Number((scores.holes?.[i]||{})[p.id]);if(!isNaN(v)&&v>0)tot+=v;}
@@ -1341,29 +1552,71 @@ function renderScorecardView(round, matchup) {
     ${isStableford?'<td></td>':''}
   </tr>`;
 
+  const complete = isMatchComplete(matchup, scores);
+  const alreadyFinalized = state.completedMatches[matchup.id];
+
   document.getElementById('sc-card-view').innerHTML = `
     <button class="back-btn" onclick="openRound('${round.id}')">← Matchups</button>
     <div class="sc-header">
       <div class="sc-course">${round.course}</div>
       <div class="sc-format">${round.formatLabel}</div>
+      ${round.tee ? `<div style="margin-top:4px;font-size:11px;font-weight:700;letter-spacing:1px;">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${teeColor};margin-right:5px;vertical-align:middle;"></span>
+        <span style="color:${teeColor};">${round.tee} Tees</span>
+        ${round.yardage ? `<span style="color:var(--text3);margin-left:8px;">${totalYd} yds · Par ${round.par.reduce((a,b)=>a+b,0)} · ${round.rating}/${round.slope}</span>` : ''}
+      </div>` : ''}
       <div style="margin-top:8px;font-size:12px;color:var(--text2);">
         <span style="color:var(--michigan-light)">Michigan:</span> ${mPlayers.map(p=>p.name).join(', ')||'TBD'}
         &nbsp;|&nbsp;
         <span style="color:var(--superior-light)">Superior:</span> ${sPlayers.map(p=>p.name).join(', ')||'TBD'}
       </div>
+      ${alreadyFinalized?`<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--gold);">✓ Match Finalized</div>`:''}
     </div>
-    <div class="sc-grid">
-      <table class="sc-table">
-        <thead>${thead}</thead>
-        <tbody>${tbody}${totalRow}</tbody>
-      </table>
+
+    <!-- View toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button onclick="scorecardViewMode='hole';renderScorecardView(ROUNDS.find(r=>r.id==='${round.id}'),state.matchups['${round.id}']['${matchup.id}'])"
+        class="btn" style="flex:1;font-size:12px;background:${scorecardViewMode==='hole'?'var(--gold)':'var(--bg3)'};color:${scorecardViewMode==='hole'?'#000':'var(--text)'};border-color:${scorecardViewMode==='hole'?'var(--gold)':'var(--border)'};">
+        ⛳ Hole by Hole
+      </button>
+      <button onclick="scorecardViewMode='table';renderScorecardView(ROUNDS.find(r=>r.id==='${round.id}'),state.matchups['${round.id}']['${matchup.id}'])"
+        class="btn" style="flex:1;font-size:12px;background:${scorecardViewMode==='table'?'var(--gold)':'var(--bg3)'};color:${scorecardViewMode==='table'?'#000':'var(--text)'};border-color:${scorecardViewMode==='table'?'var(--gold)':'var(--border)'};">
+        📋 Full Scorecard
+      </button>
     </div>
-    <div style="margin-top:16px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Match Status</div>
-      <div id="sc-live-result" style="font-size:14px;font-weight:700;text-align:center;padding:10px;">
-        ${getMPResultText(round, matchup, scores)}
+
+    <!-- Hole-by-hole view -->
+    <div id="sc-hole-view" style="display:${scorecardViewMode==='hole'?'block':'none'};"></div>
+
+    <!-- Full table view -->
+    <div id="sc-table-view" style="display:${scorecardViewMode==='table'?'block':'none'};">
+      <div class="sc-grid">
+        <table class="sc-table">
+          <thead>${thead}</thead>
+          <tbody>${tbody}${totalRow}</tbody>
+        </table>
       </div>
-    </div>`;
+      <div style="margin-top:16px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Match Status</div>
+        <div id="sc-live-result" style="font-size:14px;font-weight:700;text-align:center;padding:10px;">
+          ${getMPResultText(round, matchup, scores)}
+        </div>
+      </div>
+    </div>
+
+    <!-- End Match button -->
+    ${complete && !alreadyFinalized ? `
+    <div style="margin-top:16px;">
+      <button class="btn" style="width:100%;background:var(--gold);color:#000;font-weight:800;font-size:15px;padding:14px;"
+        onclick="endMatch('${matchup.id}')">
+        🏁 End Match — Finalize Result
+      </button>
+    </div>` : ''}`;
+
+  // If hole view is active, render the hole card
+  if (scorecardViewMode === 'hole') {
+    renderHoleCard(round, matchup);
+  }
 }
 
 function getMPResultText(round, matchup, scores) {
@@ -1415,16 +1668,18 @@ function renderCtpSection(round) {
   if (!par3Holes.length) { document.getElementById('ctp-section').innerHTML=''; return; }
 
   const players = Object.values(state.players);
+  const distOpts = Array.from({length:30},(_,i)=>`<option value="${i+1}">${i+1} ft</option>`).join('');
 
   document.getElementById('ctp-section').innerHTML = `
     <div class="section-title">⛳ Closest to the Pin (Par 3s)</div>
     ${par3Holes.map(h => {
       const key = round.id+'_hole'+h;
       const winner = state.ctp[key];
+      const dist = winner?.distance || '';
       return `
       <div class="ctp-row">
         <div class="ctp-hole">Hole ${h}</div>
-        <select class="ctp-select" onchange="setCtp('${round.id}',${h},this.value)">
+        <select id="ctp-player-${round.id}-${h}" class="ctp-select" onchange="setCtp('${round.id}',${h},this.value,document.getElementById('ctp-dist-${round.id}-${h}').value)">
           <option value="">— No winner —</option>
           <optgroup label="Team Michigan">
             ${players.filter(p=>p.team==='michigan').map(p=>`<option value="${p.id}" ${winner?.playerId===p.id?'selected':''}>${p.name}</option>`).join('')}
@@ -1433,19 +1688,24 @@ function renderCtpSection(round) {
             ${players.filter(p=>p.team==='superior').map(p=>`<option value="${p.id}" ${winner?.playerId===p.id?'selected':''}>${p.name}</option>`).join('')}
           </optgroup>
         </select>
-        ${winner ? `<span class="badge ${winner.team}" style="font-size:10px;">0.5pt</span>` : ''}
+        <select id="ctp-dist-${round.id}-${h}" class="ctp-select" style="max-width:80px;" onchange="setCtp('${round.id}',${h},document.getElementById('ctp-player-${round.id}-${h}').value,this.value)">
+          <option value="">— ft —</option>
+          ${Array.from({length:30},(_,i)=>`<option value="${i+1}" ${dist==i+1?'selected':''}>${i+1} ft</option>`).join('')}
+        </select>
+        ${winner ? `<span class="badge ${winner.team}" style="font-size:10px;">0.5pt${winner.distance?' · '+winner.distance+'ft':''}</span>` : ''}
       </div>`;
     }).join('')}`;
 }
 
-function setCtp(roundId, hole, playerId) {
+function setCtp(roundId, hole, playerId, distance) {
   const key = roundId+'_hole'+hole;
   if (!playerId) { delete state.ctp[key]; }
   else {
     const player = state.players[playerId];
-    state.ctp[key] = { playerId, team: player?.team||'unassigned' };
+    state.ctp[key] = { playerId, team: player?.team||'unassigned', distance: distance ? Number(distance) : null };
   }
   save('ctp', state.ctp);
+  renderCtpSection(ROUNDS.find(r=>r.id===roundId));
   updateHeaderScores();
   showToast('CTP saved');
 }
@@ -1614,6 +1874,32 @@ function getMVP() {
   return best ? {...best, pts:bestPts} : null;
 }
 
+function getMatchLiveStatus(round, matchup) {
+  const sc = state.scores[matchup.id] || {holes:{}};
+  if (round.format === 'stableford') {
+    const mPts = calcTeamStableford(matchup.michigan||[], sc, round.par);
+    const sPts = calcTeamStableford(matchup.superior||[], sc, round.par);
+    if (!mPts && !sPts) return {text:'No scores yet', cls:'', done:false};
+    if (mPts>sPts) return {text:`Michigan leads ${mPts}–${sPts} pts`, cls:'michigan', done:false};
+    if (sPts>mPts) return {text:`Superior leads ${sPts}–${mPts} pts`, cls:'superior', done:false};
+    return {text:`Tied ${mPts}–${sPts}`, cls:'', done:false};
+  }
+  const {mWins,sWins,halves} = calcMatchPlayHoles(matchup, sc, round);
+  const played = mWins+sWins+halves;
+  if (!played) return {text:'No scores yet', cls:'', done:false};
+  const remaining = 18 - played;
+  const diff = Math.abs(mWins-sWins);
+  const finalized = !!state.completedMatches[matchup.id];
+  if (mWins===sWins) return {text:`All Square — thru ${played}`, cls:'', done:false};
+  const leader = mWins>sWins ? 'Michigan' : 'Superior';
+  const cls = mWins>sWins ? 'michigan' : 'superior';
+  // Dormie or closed out?
+  if (diff > remaining || finalized) {
+    return {text:`${leader} wins ${diff}&${remaining||'0'}`, cls, done:true};
+  }
+  return {text:`${leader} ${diff}UP — thru ${played}`, cls, done:false};
+}
+
 function renderLeaderboard() {
   const { mPts, sPts, breakdown } = calcAllPoints();
   state.points = { michigan:mPts, superior:sPts };
@@ -1623,6 +1909,39 @@ function renderLeaderboard() {
   const players = Object.values(state.players)
     .map(p=>({...p, pts:getPlayerIndividualPoints(p.id)}))
     .sort((a,b)=>b.pts-a.pts);
+
+  // Build match results section
+  const matchSections = ROUNDS.map(round => {
+    const matchups = Object.values(state.matchups[round.id]||{});
+    if (!matchups.length) return '';
+    const matchRows = matchups.map(m => {
+      const mNames = (m.michigan||[]).map(id=>state.players[id]?.name?.split(' ')[0]||'?').join(' & ');
+      const sNames = (m.superior||[]).map(id=>state.players[id]?.name?.split(' ')[0]||'?').join(' & ');
+      const {text, cls, done} = getMatchLiveStatus(round, m);
+      const statusColor = cls==='michigan'?'var(--michigan-light)':cls==='superior'?'var(--superior-light)':'var(--text2)';
+      return `
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="font-size:12px;">
+              <span style="color:var(--michigan-light);font-weight:700;">${mNames||'TBD'}</span>
+              <span style="color:var(--text3);margin:0 6px;">vs</span>
+              <span style="color:var(--superior-light);font-weight:700;">${sNames||'TBD'}</span>
+            </div>
+            <div style="font-size:12px;font-weight:800;color:${statusColor};">${text}${done?' ✓':''}</div>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div style="margin-bottom:12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <div style="padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gold);">${round.name}</div>
+          <div style="font-size:10px;color:var(--text3);">${round.course} · ${round.date}</div>
+        </div>
+        ${matchRows}
+      </div>`;
+  }).join('');
+
+  const hasAnyMatchups = ROUNDS.some(r=>Object.keys(state.matchups[r.id]||{}).length>0);
 
   document.getElementById('leaderboard-content').innerHTML = `
     <div class="lb-team-row">
@@ -1646,6 +1965,10 @@ function renderLeaderboard() {
       </div>
     </div>` : ''}
 
+    ${hasAnyMatchups ? `
+    <div class="section-title">Today's Matches</div>
+    ${matchSections}` : ''}
+
     ${breakdown.length ? `
     <div class="section-title">Point Breakdown</div>
     <div class="lb-table pts-breakdown">
@@ -1668,7 +1991,7 @@ function renderLeaderboard() {
     </div>` : '<div class="empty-state">No scores entered yet.<br>Add matchups and enter scores to see points.</div>'}
 
     ${players.length ? `
-    <div class="section-title">Individual Standings</div>
+    <div class="section-title">Individual Performance</div>
     <div class="lb-table individual-table">
       <div class="lb-table-head">
         <div>#</div>

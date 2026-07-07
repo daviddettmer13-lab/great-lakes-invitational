@@ -277,6 +277,11 @@ input,textarea{font-family:inherit;outline:none;}
 .firebase-form textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-size:11px;font-family:monospace;height:160px;margin-bottom:10px;resize:vertical;}
 .firebase-form textarea:focus{border-color:var(--gold);}
 .photo-input{display:flex;gap:8px;margin-top:8px;}
+.ppv-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.ppv-row:last-child{border-bottom:none;}
+.ppv-row>span{font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.ppv-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:2px;}
+.ppv-val{font-size:15px;font-weight:600;color:var(--text);}
 .photo-input input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:12px;}
 
 /* ── TOAST ───────────────────────────────────────── */
@@ -720,6 +725,40 @@ input,textarea{font-family:inherit;outline:none;}
   </div>
 </div>
 
+<!-- Player Profile FORM (required after login) -->
+<div class="modal-overlay" id="profile-form-modal" style="z-index:2500;display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div id="pf-avatar" style="width:72px;height:72px;border-radius:50%;margin:0 auto 10px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;"></div>
+      <div id="pf-name" style="font-size:20px;font-weight:800;color:var(--text);"></div>
+      <div style="font-size:12px;color:var(--gold);margin-top:4px;letter-spacing:.5px;">COMPLETE YOUR PLAYER PROFILE</div>
+    </div>
+    <input class="modal-input" id="pf-nickname" placeholder="Nickname (optional — e.g. Big Cat)">
+    <input class="modal-input" id="pf-phone" type="tel" placeholder="📱 Phone Number *">
+    <input class="modal-input" id="pf-hometown" placeholder="🏡 Hometown *">
+    <input class="modal-input" id="pf-handicap" type="number" step="0.1" min="-10" max="54" placeholder="⛳ Handicap Index (e.g. 8.4)">
+    <input class="modal-input" id="pf-venmo" placeholder="💸 Venmo ID (without @)">
+    <button class="btn btn-primary btn-full" onclick="savePlayerProfile()" style="margin-top:8px;">Save Profile →</button>
+    <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">* Required fields</p>
+  </div>
+</div>
+
+<!-- Player Profile VIEW (click on any player) -->
+<div class="modal-overlay" id="player-profile-view">
+  <div class="modal" style="max-width:400px;padding:0;overflow:hidden;">
+    <div id="ppv-header" style="padding:24px 20px 16px;text-align:center;background:var(--bg2);border-bottom:1px solid var(--border);">
+      <div id="ppv-avatar" style="width:80px;height:80px;border-radius:50%;margin:0 auto 12px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;"></div>
+      <div id="ppv-name" style="font-size:20px;font-weight:800;"></div>
+      <div id="ppv-nickname" style="font-size:14px;color:var(--gold);margin-top:2px;"></div>
+      <div id="ppv-team-badge" style="margin-top:8px;"></div>
+    </div>
+    <div style="padding:16px 20px;" id="ppv-fields"></div>
+    <div style="padding:0 20px 20px;">
+      <button class="btn btn-ghost btn-full" onclick="closeModal('player-profile-view')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase Modal -->
 <div class="modal-overlay" id="firebase-modal">
   <div class="modal">
@@ -945,6 +984,108 @@ function setupFirebaseListeners() {
   });
 }
 
+// ═══════════════════════════════════════════════════
+// PLAYER PROFILES
+// ═══════════════════════════════════════════════════
+
+const PROFILE_VERSION = 2; // bump to force everyone to re-login & fill profile
+
+function checkProfileVersion() {
+  const stored = localStorage.getItem('gli26_profileVersion');
+  if (stored !== String(PROFILE_VERSION)) {
+    // Force logout so they re-login and fill out profile
+    localStorage.removeItem('gli26_loggedInAs');
+    localStorage.removeItem('gli26_appRole');
+    localStorage.removeItem('gli26_currentUser');
+    localStorage.setItem('gli26_profileVersion', String(PROFILE_VERSION));
+    appRole = 'player';
+    currentUser = null;
+    const gate = document.getElementById('role-gate');
+    if (gate) gate.style.display = 'flex';
+  }
+}
+
+function showProfileFormIfNeeded() {
+  if (!currentUser) return;
+  const p = state.players[currentUser.id];
+  if (!p) return;
+  if (p.profileComplete) return;
+  // Show profile form
+  const initials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  const avatarEl = document.getElementById('pf-avatar');
+  if (p.photoUrl) {
+    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  } else {
+    avatarEl.textContent = initials;
+  }
+  document.getElementById('pf-name').textContent = p.name;
+  document.getElementById('pf-nickname').value = p.nickname || '';
+  document.getElementById('pf-phone').value = p.phone || '';
+  document.getElementById('pf-hometown').value = p.hometown || '';
+  document.getElementById('pf-handicap').value = p.handicap !== undefined ? p.handicap : '';
+  document.getElementById('pf-venmo').value = p.venmoId || '';
+  document.getElementById('profile-form-modal').style.display = 'flex';
+}
+
+function savePlayerProfile() {
+  if (!currentUser) return;
+  const phone = document.getElementById('pf-phone').value.trim();
+  const hometown = document.getElementById('pf-hometown').value.trim();
+  if (!phone) { showToast('📱 Phone number is required'); return; }
+  if (!hometown) { showToast('🏡 Hometown is required'); return; }
+
+  const p = state.players[currentUser.id];
+  if (!p) return;
+  p.nickname   = document.getElementById('pf-nickname').value.trim();
+  p.phone      = phone;
+  p.hometown   = hometown;
+  p.handicap   = parseFloat(document.getElementById('pf-handicap').value) || null;
+  p.venmoId    = document.getElementById('pf-venmo').value.trim();
+  p.profileComplete = true;
+
+  save('players', state.players);
+  document.getElementById('profile-form-modal').style.display = 'none';
+  renderRosters();
+  showToast('✅ Profile saved!');
+}
+
+function showPlayerProfile(playerId) {
+  const p = state.players[playerId];
+  if (!p) return;
+
+  const initials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  const avatarEl = document.getElementById('ppv-avatar');
+  if (p.photoUrl) {
+    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  } else {
+    avatarEl.textContent = initials;
+    avatarEl.style.fontSize = '28px';
+  }
+
+  document.getElementById('ppv-name').textContent = p.name;
+  document.getElementById('ppv-nickname').textContent = p.nickname ? `"${p.nickname}"` : '';
+
+  const team = p.team || 'unassigned';
+  const teamBadge = team !== 'unassigned'
+    ? `<span class="badge ${team}" style="padding:3px 10px;font-size:11px;">${teamName(team)}</span>`
+    : '';
+  const roleBadge = p.role === 'Captain' ? `<span style="color:var(--gold);font-size:11px;margin-left:6px;">★ Captain</span>` :
+                    p.role === 'Commissioner' ? `<span style="color:#C9A84C;font-size:11px;margin-left:6px;">⚖️ Commissioner</span>` : '';
+  document.getElementById('ppv-team-badge').innerHTML = teamBadge + roleBadge;
+
+  const fields = [
+    p.hometown   ? `<div class="ppv-row"><span>🏡</span><div><div class="ppv-label">Hometown</div><div class="ppv-val">${p.hometown}</div></div></div>` : '',
+    p.handicap != null ? `<div class="ppv-row"><span>⛳</span><div><div class="ppv-label">Handicap</div><div class="ppv-val">${p.handicap}</div></div></div>` : '',
+    p.phone      ? `<div class="ppv-row"><span>📱</span><div><div class="ppv-label">Phone</div><div class="ppv-val">${p.phone}</div></div></div>` : '',
+    p.venmoId    ? `<div class="ppv-row"><span>💸</span><div><div class="ppv-label">Venmo</div><div class="ppv-val">@${p.venmoId}</div></div></div>` : '',
+  ].filter(Boolean).join('');
+
+  document.getElementById('ppv-fields').innerHTML = fields ||
+    '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px 0;">Profile not yet filled out</div>';
+
+  showModal('player-profile-view');
+}
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDccE-dM6z_of1QMv8HQb36xlEyyuvIeqY",
   authDomain: "gli-2026.firebaseapp.com",
@@ -1130,13 +1271,14 @@ function renderRosters() {
 
     return `
     <div class="player-card">
-      <div class="player-avatar ${avatarClass}">${avatarContent}</div>
-      <div class="player-info">
-        <div class="player-name">${p.name}</div>
+      <div class="player-avatar ${avatarClass}" onclick="showPlayerProfile('${p.id}')" style="cursor:pointer;">${avatarContent}</div>
+      <div class="player-info" onclick="showPlayerProfile('${p.id}')" style="cursor:pointer;">
+        <div class="player-name">${p.name}${p.nickname ? ` <span style="color:var(--gold);font-size:11px;font-weight:500;">"${p.nickname}"</span>` : ''}</div>
         <div class="player-sub">
           ${team === 'unassigned' ? '<span style="color:var(--text3)">Unassigned</span>' : `<span class="badge ${team}" style="padding:2px 7px;font-size:10px;">${teamName(team)}</span>`}
           ${p.role === 'Captain' ? `<span style="color:var(--gold);font-size:10px;margin-left:4px;">★ Captain</span>` : ''}
           ${p.role === 'Commissioner' ? `<span style="color:#C9A84C;font-size:10px;margin-left:4px;">⚖️ Commissioner</span>` : ''}
+          ${p.hometown ? `<span style="color:var(--text3);font-size:10px;margin-left:4px;">📍${p.hometown}</span>` : ''}
           ${mvpPts > 0 ? `<span style="color:var(--gold);font-size:10px;margin-left:6px;">⭐ ${mvpPts} pts</span>` : ''}
         </div>
       </div>
@@ -2287,15 +2429,18 @@ function attemptLogin() {
   updatePermissions();
   updateChatUserLabel();
   showToast('👋 Welcome, ' + (playerData ? playerData.name : username) + '!');
+  setTimeout(showProfileFormIfNeeded, 400);
 }
 
 function checkLoginStatus() {
+  checkProfileVersion(); // force re-login if version bumped
   const savedUser = localStorage.getItem('gli26_loggedInAs');
   const savedRole = localStorage.getItem('gli26_appRole');
   if (savedUser && USER_LOGINS[savedUser] && savedRole) {
     appRole = savedRole;
     document.getElementById('role-gate').style.display = 'none';
     updatePermissions();
+    setTimeout(showProfileFormIfNeeded, 600);
   }
   // else: login screen stays visible
 }

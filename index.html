@@ -135,8 +135,8 @@ input,textarea{font-family:inherit;outline:none;}
 .roster-tab.active-m{border-color:var(--michigan);color:var(--michigan-light);background:rgba(26,107,58,.15);}
 .roster-tab.active-s{border-color:var(--superior);color:var(--superior-light);background:rgba(26,74,140,.15);}
 .player-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
-.player-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;text-transform:uppercase;overflow:hidden;}
-.player-avatar img{width:100%;height:100%;object-fit:cover;}
+.player-avatar{width:50px;height:66px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;text-transform:uppercase;overflow:hidden;}
+.player-avatar img{width:100%;height:100%;object-fit:cover;object-position:top;}
 .player-avatar.no-photo{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
 .player-avatar.michigan{background:var(--michigan-dark);border:2px solid var(--michigan);}
 .player-avatar.superior{background:var(--superior-dark);border:2px solid var(--superior);}
@@ -442,7 +442,7 @@ input,textarea{font-family:inherit;outline:none;}
         <span class="hdr-score-lbl">Sup</span>
       </div>
       <button id="header-avatar-btn" onclick="showUserModal()" style="background:none;border:none;padding:2px 2px 0;cursor:pointer;margin-left:6px;" title="My Account">
-        <div id="header-avatar" style="width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);overflow:hidden;flex-shrink:0;">👤</div>
+        <div id="header-avatar" style="width:28px;height:38px;border-radius:5px;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text2);overflow:hidden;flex-shrink:0;">👤</div>
       </button>
     </div>
   </header>
@@ -763,7 +763,7 @@ input,textarea{font-family:inherit;outline:none;}
 <div class="modal-overlay" id="profile-form-modal" style="z-index:2500;display:none;">
   <div class="modal" style="max-width:400px;">
     <div style="text-align:center;margin-bottom:20px;">
-      <div id="pf-avatar" style="width:72px;height:72px;border-radius:50%;margin:0 auto 10px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;"></div>
+      <div id="pf-avatar" style="width:90px;height:120px;border-radius:10px;margin:0 auto 10px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;"></div>
       <div id="pf-name" style="font-size:20px;font-weight:800;color:var(--text);"></div>
       <div style="font-size:12px;color:var(--gold);margin-top:4px;letter-spacing:.5px;">COMPLETE YOUR PLAYER PROFILE</div>
     </div>
@@ -781,7 +781,7 @@ input,textarea{font-family:inherit;outline:none;}
 <div class="modal-overlay" id="player-profile-view">
   <div class="modal" style="max-width:400px;padding:0;overflow:hidden;">
     <div id="ppv-header" style="padding:24px 20px 16px;text-align:center;background:var(--bg2);border-bottom:1px solid var(--border);">
-      <div id="ppv-avatar" style="width:80px;height:80px;border-radius:50%;margin:0 auto 12px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;"></div>
+      <div id="ppv-avatar" style="width:110px;height:146px;border-radius:10px;margin:0 auto 12px;overflow:hidden;background:var(--bg3);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;"></div>
       <div id="ppv-name" style="font-size:20px;font-weight:800;"></div>
       <div id="ppv-nickname" style="font-size:14px;color:var(--gold);margin-top:2px;"></div>
       <div id="ppv-team-badge" style="margin-top:8px;"></div>
@@ -813,7 +813,7 @@ input,textarea{font-family:inherit;outline:none;}
     <div class="modal-title" id="player-modal-title">Edit Player</div>
     <input class="modal-input" id="player-edit-name" type="text" placeholder="Player name">
     <div class="photo-input" style="align-items:center;gap:12px;">
-      <div id="player-photo-preview" style="width:52px;height:52px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3);">📷</div>
+      <div id="player-photo-preview" style="width:52px;height:70px;border-radius:8px;background:var(--bg3);border:2px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3);">📷</div>
       <div style="flex:1;">
         <label style="display:block;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;text-align:center;font-size:13px;color:var(--text2);cursor:pointer;">
           📂 Choose Photo
@@ -1059,7 +1059,7 @@ function showProfileFormIfNeeded() {
   const initials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
   const avatarEl = document.getElementById('pf-avatar');
   if (p.photoUrl) {
-    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
   } else {
     avatarEl.textContent = initials;
   }
@@ -1101,7 +1101,7 @@ function showPlayerProfile(playerId) {
   const initials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
   const avatarEl = document.getElementById('ppv-avatar');
   if (p.photoUrl) {
-    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
   } else {
     avatarEl.textContent = initials;
     avatarEl.style.fontSize = '28px';
@@ -2667,12 +2667,13 @@ function updateHeaderAvatar() {
   if (!el) return;
   if (!currentUser) { el.innerHTML = '👤'; el.style.fontSize = '15px'; return; }
   const p = state.players[currentUser.id];
+  el.style.borderRadius = '5px';
   if (p && p.photoUrl) {
-    el.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+    el.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
   } else {
     const initials = currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
     el.innerHTML = initials;
-    el.style.fontSize = '12px';
+    el.style.fontSize = '11px';
     el.style.fontWeight = '800';
     el.style.color = currentUser.team === 'michigan' ? 'var(--michigan-light)' :
                      currentUser.team === 'superior' ? 'var(--superior-light)' : 'var(--gold)';

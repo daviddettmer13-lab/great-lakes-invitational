@@ -471,12 +471,6 @@ input,textarea{font-family:inherit;outline:none;}
         </div>
       </div>
 
-      <div class="section-title">Quick Actions</div>
-      <div class="flex-gap" style="flex-direction:column;gap:8px;">
-        <button class="btn btn-ghost btn-full" onclick="switchTab('scorecards')">⛳ Enter Scores</button>
-        <button class="btn btn-ghost btn-full" id="home-draft-btn" onclick="switchTab('rosters')">👥 Manage Draft</button>
-        <button class="btn btn-ghost btn-full" onclick="showModal('firebase-modal')">🔥 Connect Firebase (Live Sync)</button>
-      </div>
     </div>
 
     <!-- SCHEDULE -->
@@ -2327,9 +2321,6 @@ function updatePermissions() {
   const navRosters = document.getElementById('nav-rosters');
   if (navRosters) navRosters.style.display = admin ? '' : 'none';
 
-  // Home: Manage Draft button → admin only
-  const draftBtn = document.getElementById('home-draft-btn');
-  if (draftBtn) draftBtn.style.display = admin ? '' : 'none';
 
   // Scorecards: Create Matchup wrap → admin only
   const matchupWrap = document.getElementById('btn-create-matchup-wrap');

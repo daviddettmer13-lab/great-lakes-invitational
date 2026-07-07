@@ -943,14 +943,23 @@ function setupFirebaseListeners() {
   });
 }
 
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDccE-dM6z_of1QMv8HQb36xlEyyuvIeqY",
+  authDomain: "gli-2026.firebaseapp.com",
+  databaseURL: "https://gli-2026-default-rtdb.firebaseio.com",
+  projectId: "gli-2026",
+  storageBucket: "gli-2026.firebasestorage.app",
+  messagingSenderId: "218150425189",
+  appId: "1:218150425189:web:bf15ff73ecf9796d34ec8c"
+};
+
 function tryReconnectFirebase() {
-  const cfg = load('fbconfig', null);
-  if (!cfg) return;
+  const cfg = load('fbconfig', null) || FIREBASE_CONFIG;
   try {
     try { firebase.app(); } catch(e) { firebase.initializeApp(cfg); }
     firebaseDb = firebase.database();
     setupFirebaseListeners();
-  } catch(e) {}
+  } catch(e) { console.warn('Firebase init failed:', e); }
 }
 
 // ═══════════════════════════════════════════════════

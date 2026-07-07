@@ -263,6 +263,17 @@ input,textarea{font-family:inherit;outline:none;}
 .chat-send{background:var(--gold);color:#000;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .chat-empty{text-align:center;color:var(--text3);padding:40px 20px;font-size:13px;}
 
+/* ── BET CARDS ───────────────────────────────────── */
+.bet-card{background:var(--bg2);border:2px solid var(--gold);border-radius:14px;padding:14px;align-self:stretch;max-width:100%;}
+.bet-amount{font-size:22px;font-weight:900;color:var(--gold);line-height:1;}
+.bet-desc{font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.4;}
+.bet-participants{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.bet-participant{display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;}
+.bet-participant.accepted{background:rgba(201,168,76,.15);border-color:var(--gold);}
+.bet-participant.declined{opacity:.55;text-decoration:line-through;}
+.bet-locked-banner{background:var(--gold);color:#000;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;text-align:center;letter-spacing:.5px;}
+.bet-pending-banner{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text2);text-align:center;}
+
 /* ── MODALS ──────────────────────────────────────── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;display:none;align-items:flex-end;justify-content:center;}
 .modal-overlay.active{display:flex;}
@@ -430,7 +441,9 @@ input,textarea{font-family:inherit;outline:none;}
         <span class="hdr-score-num" id="hdr-s-pts">0</span>
         <span class="hdr-score-lbl">Sup</span>
       </div>
-      <button onclick="showUserModal()" style="background:none;border:none;color:var(--text2);font-size:20px;padding:4px 6px;cursor:pointer;margin-left:4px;" title="Account">👤</button>
+      <button id="header-avatar-btn" onclick="showUserModal()" style="background:none;border:none;padding:2px 2px 0;cursor:pointer;margin-left:6px;" title="My Account">
+        <div id="header-avatar" style="width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text2);overflow:hidden;flex-shrink:0;">👤</div>
+      </button>
     </div>
   </header>
 
@@ -662,7 +675,7 @@ input,textarea{font-family:inherit;outline:none;}
       <div class="chat-header">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <span id="chat-user-label" style="font-size:12px;color:var(--text2);">Not signed in</span>
-          <button class="btn btn-ghost btn-sm" onclick="showUserModal()">👤 Account</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--gold);font-weight:900;border-color:var(--gold);font-size:13px;" onclick="showCreateBetModal()">💰 Bet</button>
         </div>
         <div class="chat-team-toggle">
           <button class="chat-toggle-btn all active" onclick="setChatFilter('all')">All Teams</button>
@@ -722,6 +735,27 @@ input,textarea{font-family:inherit;outline:none;}
     </div>
     <button class="btn btn-ghost btn-full" style="color:#ff4444;border-color:#cc3333;" onclick="logout()">Sign Out</button>
     <button class="btn btn-ghost btn-full mt-8" onclick="closeModal('user-modal')">Close</button>
+  </div>
+</div>
+
+<!-- Create Bet Modal -->
+<div class="modal-overlay" id="create-bet-modal">
+  <div class="modal" style="max-width:420px;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:28px;">💰</div>
+      <div style="font-size:18px;font-weight:900;color:var(--text);">New Bet / Challenge</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;">Select who's in, describe the bet, set the amount</div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Who's in this bet?</div>
+    <div id="bet-participant-list" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+    <input class="modal-input" id="bet-description" placeholder="What's the bet? (e.g. I beat Zach in closest to pin)">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:22px;font-weight:900;color:var(--gold);line-height:38px;">$</span>
+      <input class="modal-input" id="bet-amount" type="number" min="1" placeholder="Amount" style="flex:1;margin-bottom:0;">
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin:6px 0 12px;">Must be paid by end of the event.</p>
+    <button class="btn btn-primary btn-full" onclick="createBet()">Post Bet →</button>
+    <button class="btn btn-ghost btn-full" onclick="closeModal('create-bet-modal')" style="margin-top:8px;">Cancel</button>
   </div>
 </div>
 
@@ -863,6 +897,7 @@ let state = {
   ctp: {},        // 'roundId_hole' -> { playerId, team }
   skins: {},      // 'roundId_hole' -> team (calculated)
   messages: [],   // [{id,userId,name,team,text,ts}]
+  bets: [],       // [{id,type:'bet',proposerId,proposerName,description,amount,participants,locked,ts}]
   points: { michigan:0, superior:0 }
 };
 
@@ -901,6 +936,7 @@ function saveState() {
   save('scores', state.scores);
   save('ctp', state.ctp);
   save('messages', state.messages);
+  save('bets', state.bets);
 }
 
 function loadState() {
@@ -909,6 +945,7 @@ function loadState() {
   state.scores           = load('scores', {});
   state.ctp              = load('ctp', {});
   state.messages         = load('messages', []);
+  state.bets             = load('bets', []);
   state.completedMatches = load('completedMatches', {});
   currentUser            = load('currentUser', null);
 }
@@ -947,7 +984,7 @@ function setupFirebaseListeners() {
   if (!firebaseDb) return;
   firebaseDb.ref('gli26/players').on('value', snap => {
     const v = snap.val();
-    if (v) { state.players = v; renderRosters(); updateHeaderScores(); renderLeaderboard(); }
+    if (v) { state.players = v; renderRosters(); updateHeaderScores(); renderLeaderboard(); updateHeaderAvatar(); }
   });
   firebaseDb.ref('gli26/matchups').on('value', snap => {
     const v = snap.val();
@@ -971,6 +1008,14 @@ function setupFirebaseListeners() {
     if (v) {
       if (Array.isArray(v)) state.messages = v.filter(Boolean);
       else state.messages = Object.values(v).sort((a,b)=>a.ts-b.ts);
+      renderChat();
+    }
+  });
+  firebaseDb.ref('gli26/bets').on('value', snap => {
+    const v = snap.val();
+    if (v) {
+      if (Array.isArray(v)) state.bets = v.filter(Boolean);
+      else state.bets = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
     }
   });
@@ -2242,16 +2287,26 @@ function sendChatMessage() {
 }
 
 function renderChat() {
-  const filtered = chatFilter === 'all' ? state.messages :
-    state.messages.filter(m=>m.team===chatFilter);
+  // Merge messages + bets (bets always appear in all-teams view)
+  let items = [];
+  if (chatFilter === 'all') {
+    items = [
+      ...state.messages.map(m => ({...m, _type: 'message'})),
+      ...(state.bets || []).map(b => ({...b, _type: 'bet'}))
+    ].sort((a,b) => a.ts - b.ts);
+  } else {
+    items = state.messages.filter(m => m.team === chatFilter).map(m => ({...m, _type: 'message'}));
+  }
 
   const container = document.getElementById('chat-messages');
-  if (!filtered.length) {
+  if (!items.length) {
     container.innerHTML = '<div class="chat-empty">🏌️ No messages yet.<br>Start the trash talk!</div>';
     return;
   }
 
-  container.innerHTML = filtered.map(msg => {
+  container.innerHTML = items.map(item => {
+    if (item._type === 'bet') return renderBetCard(item);
+    const msg = item;
     const mine = currentUser && msg.userId === currentUser.id;
     const time = new Date(msg.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     return `
@@ -2271,33 +2326,155 @@ function scrollChatBottom() {
 }
 
 // ═══════════════════════════════════════════════════
+// BETS
+// ═══════════════════════════════════════════════════
+
+let selectedBetParticipants = new Set();
+
+function showCreateBetModal() {
+  if (!currentUser) { showToast('Sign in to create a bet'); return; }
+  selectedBetParticipants = new Set();
+  document.getElementById('bet-description').value = '';
+  document.getElementById('bet-amount').value = '';
+
+  const players = Object.values(state.players).filter(p => p.id !== currentUser.id);
+  const list = document.getElementById('bet-participant-list');
+  list.innerHTML = players.length ? players.map(p => `
+    <div class="player-select-item" id="bet-p-${p.id}" onclick="toggleBetParticipant('${p.id}')">
+      <div style="width:32px;height:32px;border-radius:50%;background:${p.team==='michigan'?'var(--michigan-dark)':p.team==='superior'?'var(--superior-dark)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">
+        ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:700;">${p.name}</div>
+        <div style="font-size:10px;color:var(--text2);">${teamName(p.team||'unassigned')}</div>
+      </div>
+      <span id="bet-check-${p.id}" style="margin-left:auto;color:var(--gold);display:none;">✓</span>
+    </div>`).join('') :
+    '<div style="color:var(--text3);font-size:13px;text-align:center;padding:8px;">No other players found</div>';
+  showModal('create-bet-modal');
+}
+
+function toggleBetParticipant(playerId) {
+  if (selectedBetParticipants.has(playerId)) {
+    selectedBetParticipants.delete(playerId);
+    document.getElementById('bet-p-'+playerId).classList.remove('selected');
+    document.getElementById('bet-check-'+playerId).style.display = 'none';
+  } else {
+    selectedBetParticipants.add(playerId);
+    document.getElementById('bet-p-'+playerId).classList.add('selected');
+    document.getElementById('bet-check-'+playerId).style.display = '';
+  }
+}
+
+function createBet() {
+  if (!currentUser) return;
+  const desc = document.getElementById('bet-description').value.trim();
+  const amount = parseFloat(document.getElementById('bet-amount').value);
+  if (selectedBetParticipants.size === 0) { showToast('👥 Select at least one other player'); return; }
+  if (!desc) { showToast('📝 Describe the bet first'); return; }
+  if (!amount || amount <= 0) { showToast('💰 Enter a valid amount'); return; }
+
+  const participants = [
+    { id: currentUser.id, name: currentUser.name, team: currentUser.team || 'unassigned', accepted: true, declined: false },
+    ...Array.from(selectedBetParticipants).map(id => {
+      const p = state.players[id];
+      return { id, name: p.name, team: p.team || 'unassigned', accepted: false, declined: false };
+    })
+  ];
+
+  const bet = {
+    id: genId(),
+    type: 'bet',
+    proposerId: currentUser.id,
+    proposerName: currentUser.name,
+    description: desc,
+    amount,
+    participants,
+    locked: false,
+    ts: Date.now()
+  };
+
+  if (!state.bets) state.bets = [];
+  state.bets.push(bet);
+  save('bets', state.bets);
+  closeModal('create-bet-modal');
+  setChatFilter('all');
+  renderChat();
+  scrollChatBottom();
+  showToast('💰 Bet posted! Waiting for others to accept…');
+}
+
+function acceptBet(betId) {
+  if (!currentUser) { showToast('Sign in to accept bets'); return; }
+  const bet = state.bets.find(b => b.id === betId);
+  if (!bet || bet.locked) return;
+  const p = bet.participants.find(p => p.id === currentUser.id);
+  if (!p) { showToast("You're not part of this bet"); return; }
+  if (p.accepted) { showToast('You already accepted this bet'); return; }
+  p.accepted = true;
+  p.declined = false;
+  if (bet.participants.every(p => p.accepted)) bet.locked = true;
+  save('bets', state.bets);
+  renderChat();
+  showToast(bet.locked ? '🔒 Bet locked in! Pay up at the end!' : '✅ You accepted! Waiting for others…');
+}
+
+function declineBet(betId) {
+  if (!currentUser) return;
+  const bet = state.bets.find(b => b.id === betId);
+  if (!bet || bet.locked) return;
+  const p = bet.participants.find(p => p.id === currentUser.id);
+  if (!p || p.id === bet.proposerId) return;
+  p.declined = true;
+  p.accepted = false;
+  save('bets', state.bets);
+  renderChat();
+  showToast('❌ Bet declined');
+}
+
+function renderBetCard(bet) {
+  const time = new Date(bet.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const myEntry = currentUser && bet.participants.find(p => p.id === currentUser.id);
+  const canRespond = myEntry && !myEntry.accepted && !myEntry.declined && !bet.locked;
+
+  const participantsHtml = bet.participants.map(p => {
+    const cls = p.declined ? 'declined' : p.accepted ? 'accepted' : '';
+    const icon = p.declined ? '❌' : p.accepted ? '✅' : '⏳';
+    return `<div class="bet-participant ${cls}">${icon} ${escHtml(p.name)}</div>`;
+  }).join('');
+
+  const statusHtml = bet.locked
+    ? `<div class="bet-locked-banner">🔒 BET LOCKED — Must be paid by end of the event</div>`
+    : `<div class="bet-pending-banner">⏳ Waiting for everyone to accept…</div>`;
+
+  const actionBtns = canRespond ? `
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-primary" style="flex:1;padding:8px 4px;font-size:13px;" onclick="acceptBet('${bet.id}')">✅ Accept</button>
+      <button class="btn btn-ghost" style="flex:1;padding:8px 4px;font-size:13px;" onclick="declineBet('${bet.id}')">❌ Decline</button>
+    </div>` : '';
+
+  return `
+  <div class="bet-card">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+      <span style="font-size:20px;">💰</span>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">${escHtml(bet.proposerName)} proposed a bet • ${time}</div>
+        <div class="bet-amount">$${bet.amount}</div>
+      </div>
+    </div>
+    <div class="bet-desc">${escHtml(bet.description)}</div>
+    <div class="bet-participants">${participantsHtml}</div>
+    ${statusHtml}
+    ${actionBtns}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
 // USER SELECTION
 // ═══════════════════════════════════════════════════
 
-function showUserModal() {
-  const players = Object.values(state.players);
-  const list = document.getElementById('user-player-list');
-  if (!players.length) {
-    list.innerHTML = '<div style="color:var(--text3);text-align:center;font-size:13px;">Add players in the Rosters tab first.</div>';
-  } else {
-    list.innerHTML = players.map(p=>`
-      <div class="player-select-item ${selectedUserId===p.id?'selected':''}" onclick="selectUser('${p.id}')">
-        <div style="width:32px;height:32px;border-radius:50%;background:${p.team==='michigan'?'var(--michigan-dark)':p.team==='superior'?'var(--superior-dark)':'var(--bg3)'};border:1px solid ${p.team==='michigan'?'var(--michigan)':p.team==='superior'?'var(--superior)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">
-          ${p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:700;">${p.name}</div>
-          <div style="font-size:10px;color:var(--text2);">${teamName(p.team||'unassigned')}</div>
-        </div>
-        ${selectedUserId===p.id?'<span style="margin-left:auto;color:var(--gold);">✓</span>':''}
-      </div>`).join('');
-  }
-  showModal('user-modal');
-}
-
 function selectUser(id) {
   selectedUserId = id;
-  showUserModal();
 }
 
 function confirmUserSelection() {
@@ -2428,6 +2605,7 @@ function attemptLogin() {
   document.getElementById('role-gate').style.display = 'none';
   updatePermissions();
   updateChatUserLabel();
+  updateHeaderAvatar();
   showToast('👋 Welcome, ' + (playerData ? playerData.name : username) + '!');
   setTimeout(showProfileFormIfNeeded, 400);
 }
@@ -2451,6 +2629,7 @@ function logout() {
   localStorage.removeItem('gli26_currentUser');
   appRole = 'player';
   currentUser = null;
+  updateHeaderAvatar();
   closeModal('user-modal');
   document.getElementById('role-gate').style.display = 'flex';
   document.getElementById('login-username').value = '';
@@ -2480,7 +2659,28 @@ function updatePermissions() {
 
 function updateChatUserLabel() {
   const lbl = document.getElementById('chat-user-label');
-  if (lbl && currentUser) lbl.textContent = '👤 ' + currentUser.name + ' · ' + teamName(currentUser.team);
+  if (lbl && currentUser) lbl.textContent = currentUser.name + ' · ' + teamName(currentUser.team);
+}
+
+function updateHeaderAvatar() {
+  const el = document.getElementById('header-avatar');
+  if (!el) return;
+  if (!currentUser) { el.innerHTML = '👤'; el.style.fontSize = '15px'; return; }
+  const p = state.players[currentUser.id];
+  if (p && p.photoUrl) {
+    el.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  } else {
+    const initials = currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    el.innerHTML = initials;
+    el.style.fontSize = '12px';
+    el.style.fontWeight = '800';
+    el.style.color = currentUser.team === 'michigan' ? 'var(--michigan-light)' :
+                     currentUser.team === 'superior' ? 'var(--superior-light)' : 'var(--gold)';
+    el.style.background = currentUser.team === 'michigan' ? 'var(--michigan-dark)' :
+                          currentUser.team === 'superior' ? 'var(--superior-dark)' : 'var(--bg3)';
+    el.style.borderColor = currentUser.team === 'michigan' ? 'var(--michigan)' :
+                           currentUser.team === 'superior' ? 'var(--superior)' : 'var(--gold)';
+  }
 }
 
 function showUserModal() {
@@ -2537,6 +2737,7 @@ function init() {
   renderRoundPicker();
   renderChat();
   updateChatUserLabel();
+  updateHeaderAvatar();
 }
 
 // Boot the app once DOM is fully ready

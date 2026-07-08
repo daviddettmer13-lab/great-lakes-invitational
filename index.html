@@ -43,15 +43,16 @@ input,textarea{font-family:inherit;outline:none;}
 
 /* ── LAYOUT ─────────────────────────────────────── */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
-.app-header{height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:10;}
+.app-header{height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 14px;flex-shrink:0;z-index:10;}
 .content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;}
 .bottom-nav{height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);}
 
 /* ── HEADER ──────────────────────────────────────── */
-.header-emblem{width:40px;height:40px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--gold);letter-spacing:-1px;flex-shrink:0;}
-.header-title h1{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;line-height:1.2;}
-.header-title p{font-size:10px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;}
-.header-scores{margin-left:auto;display:flex;align-items:center;gap:6px;}
+#header-logo-btn{width:54px;height:54px;border-radius:50%;border:2.5px solid var(--gold);box-shadow:0 0 0 5px rgba(201,168,76,.18);background:none;padding:0;cursor:pointer;overflow:hidden;animation:hdr-logo-pulse 3s ease-in-out infinite;display:block;}
+#header-logo-btn img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;}
+@keyframes hdr-logo-pulse{0%,100%{box-shadow:0 0 0 5px rgba(201,168,76,.18);}50%{box-shadow:0 0 0 11px rgba(201,168,76,.05);}}
+.header-scores{display:flex;align-items:center;gap:6px;}
+.header-right{display:flex;justify-content:flex-end;align-items:center;}
 .hdr-score{display:flex;flex-direction:column;align-items:center;padding:4px 10px;border-radius:8px;}
 .hdr-score.m{background:var(--michigan-dark);border:1px solid var(--michigan);}
 .hdr-score.s{background:var(--superior-dark);border:1px solid var(--superior);}
@@ -246,9 +247,6 @@ input,textarea{font-family:inherit;outline:none;}
 #page-map{padding:0;display:none;flex-direction:column;height:calc(100dvh - var(--header-h) - var(--nav-h));overflow:hidden;position:relative;}
 #page-map.active{display:flex;}
 #course-map{flex:1;min-height:0;width:100%;}
-#map-logo-btn{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:500;width:74px;height:74px;border-radius:50%;border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(201,168,76,.15),0 4px 24px rgba(0,0,0,.7);background:var(--bg2);padding:0;cursor:pointer;overflow:hidden;animation:map-logo-pulse 3s ease-in-out infinite;}
-#map-logo-btn img{width:100%;height:100%;object-fit:cover;display:block;}
-@keyframes map-logo-pulse{0%,100%{box-shadow:0 0 0 6px rgba(201,168,76,.15),0 4px 24px rgba(0,0,0,.7);}50%{box-shadow:0 0 0 12px rgba(201,168,76,.08),0 4px 24px rgba(0,0,0,.7);}}
 /* ── DASHBOARD OVERLAY ───────────────────────────── */
 #dashboard-overlay{position:fixed;inset:0;z-index:3000;background:rgba(6,6,6,.96);display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
 #dashboard-overlay.active{display:flex;}
@@ -435,13 +433,7 @@ input,textarea{font-family:inherit;outline:none;}
 
   <!-- HEADER -->
   <header class="app-header">
-    <button onclick="refreshApp()" style="background:none;border:none;padding:0;cursor:pointer;flex-shrink:0;border-radius:6px;overflow:hidden;" title="Refresh">
-      <img src="gli-logo.png" style="width:44px;height:44px;display:block;object-fit:cover;border-radius:6px;">
-    </button>
-    <div class="header-title">
-      <h1>Great Lakes Invitational</h1>
-      <p>2026 · Aug 26–30</p>
-    </div>
+    <!-- Left: team scores -->
     <div class="header-scores">
       <div class="hdr-score m">
         <span class="hdr-score-num" id="hdr-m-pts">0</span>
@@ -452,8 +444,15 @@ input,textarea{font-family:inherit;outline:none;}
         <span class="hdr-score-num" id="hdr-s-pts">0</span>
         <span class="hdr-score-lbl">Sup</span>
       </div>
-      <button id="header-avatar-btn" onclick="showUserModal()" style="background:none;border:none;padding:2px 2px 0;cursor:pointer;margin-left:6px;" title="My Account">
-        <div id="header-avatar" style="width:28px;height:38px;border-radius:5px;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text2);overflow:hidden;flex-shrink:0;">👤</div>
+    </div>
+    <!-- Center: GLI logo (opens dashboard) -->
+    <button id="header-logo-btn" onclick="openDashboard()" title="Navigation">
+      <img src="gli-logo.png" alt="GLI">
+    </button>
+    <!-- Right: avatar -->
+    <div class="header-right">
+      <button id="header-avatar-btn" onclick="showUserModal()" style="background:none;border:none;padding:0;cursor:pointer;" title="My Account">
+        <div id="header-avatar" style="width:32px;height:40px;border-radius:6px;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);overflow:hidden;">👤</div>
       </button>
     </div>
   </header>
@@ -713,9 +712,6 @@ input,textarea{font-family:inherit;outline:none;}
         <button id="loc-toggle-btn" class="btn btn-sm btn-ghost" onclick="toggleLocationSharing()" style="font-size:12px;">📍 Share Location</button>
       </div>
       <div id="course-map"></div>
-      <button id="map-logo-btn" onclick="openDashboard()" title="Open Dashboard">
-        <img src="gli-logo.png" alt="GLI">
-      </button>
     </div>
 
     <!-- DASHBOARD OVERLAY -->

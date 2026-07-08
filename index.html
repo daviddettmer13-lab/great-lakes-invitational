@@ -247,6 +247,29 @@ input,textarea{font-family:inherit;outline:none;}
 #page-map{padding:0;display:none;flex-direction:column;height:calc(100dvh - var(--header-h) - var(--nav-h));overflow:hidden;position:relative;}
 #page-map.active{display:flex;}
 #course-map{flex:1;min-height:0;width:100%;}
+/* ── CADDY AI ────────────────────────────────────── */
+#caddy-btn{position:fixed;bottom:calc(var(--nav-h) + 14px);right:14px;z-index:1500;width:58px;height:58px;border-radius:50%;background:#000;border:2.5px solid var(--gold);cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.8),0 0 0 4px rgba(201,168,76,.2);overflow:hidden;padding:0;transition:transform .15s;-webkit-tap-highlight-color:transparent;}
+#caddy-btn img{width:100%;height:130%;object-fit:cover;object-position:center 8%;display:block;}
+#caddy-btn:active{transform:scale(.93);}
+#caddy-panel{position:fixed;bottom:calc(var(--nav-h) + 78px);right:14px;z-index:1499;width:320px;max-width:calc(100vw - 28px);height:430px;background:var(--bg2);border:1px solid var(--border);border-radius:18px;display:none;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.8);overflow:hidden;transform-origin:bottom right;}
+#caddy-panel.open{display:flex;}
+#caddy-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
+#caddy-avatar{width:36px;height:36px;border-radius:50%;background:#000;border:1.5px solid var(--gold);overflow:hidden;flex-shrink:0;}
+#caddy-avatar img{width:100%;height:130%;object-fit:cover;object-position:center 8%;}
+.caddy-hdr-name{font-size:13px;font-weight:800;color:var(--text);}
+.caddy-hdr-sub{font-size:10px;color:var(--gold);letter-spacing:.3px;}
+#caddy-close-btn{margin-left:auto;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;}
+#caddy-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.caddy-msg{max-width:88%;font-size:13px;line-height:1.5;padding:9px 12px;border-radius:12px;white-space:pre-wrap;}
+.caddy-msg-bot{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:4px 12px 12px 12px;color:var(--text);}
+.caddy-msg-user{align-self:flex-end;background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(201,168,76,.12));border:1px solid rgba(201,168,76,.3);border-radius:12px 4px 12px 12px;color:var(--text);}
+.caddy-msg.thinking{color:var(--text3);font-style:italic;}
+#caddy-input-row{display:flex;gap:6px;padding:10px;border-top:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
+#caddy-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;}
+#caddy-input:focus{border-color:var(--gold);}
+#caddy-mic-btn,#caddy-send-btn{background:none;border:1px solid var(--border);border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2);}
+#caddy-mic-btn.listening{border-color:red;color:red;}
+#caddy-send-btn{background:var(--gold);border-color:var(--gold);color:#000;font-weight:700;}
 /* ── DASHBOARD OVERLAY ───────────────────────────── */
 #dashboard-overlay{position:fixed;inset:0;z-index:3000;background:rgba(6,6,6,.96);display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
 #dashboard-overlay.active{display:flex;}
@@ -518,7 +541,7 @@ input,textarea{font-family:inherit;outline:none;}
       <!-- Day 1 -->
       <div class="day-header" style="margin-top:16px;"><span class="day-badge">Day 1</span><span class="day-date">Thursday, August 27</span></div>
       <div class="sched-card">
-        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">The Crown Golf Club</span></div>
+        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">The Crown Golf Club</span><span class="sched-time" style="margin-left:auto;">🕙 10:50 AM</span></div>
         <div class="sched-body">
           <div class="sched-format-tag">🏌️ Round 1 — 2v2 Scramble</div>
           <div class="sched-points">
@@ -533,7 +556,7 @@ input,textarea{font-family:inherit;outline:none;}
       <!-- Day 2 -->
       <div class="day-header" style="margin-top:16px;"><span class="day-badge">Day 2</span><span class="day-date">Friday, August 28</span></div>
       <div class="sched-card">
-        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">Sugar Loaf — The Old Course</span></div>
+        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">Sugar Loaf — The Old Course</span><span class="sched-time" style="margin-left:auto;">🕘 9:00 AM</span></div>
         <div class="sched-body">
           <div class="sched-format-tag">📊 Round 2 — Stableford Combined</div>
           <div class="sched-points">
@@ -545,7 +568,7 @@ input,textarea{font-family:inherit;outline:none;}
         </div>
       </div>
       <div class="sched-card">
-        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">Manitou Passage</span></div>
+        <div class="sched-card-header"><span style="font-size:20px">⛳</span><span class="sched-course">Manitou Passage</span><span class="sched-time" style="margin-left:auto;">🕒 3:00 PM</span></div>
         <div class="sched-body">
           <div class="sched-format-tag">🔀 Round 3 — Alt-Shot / Scramble Combo</div>
           <div class="sched-points">
@@ -560,7 +583,7 @@ input,textarea{font-family:inherit;outline:none;}
       <!-- Day 3 -->
       <div class="day-header" style="margin-top:16px;"><span class="day-badge">Day 3</span><span class="day-date">Saturday, August 29</span></div>
       <div class="sched-card">
-        <div class="sched-card-header"><span style="font-size:20px">🏆</span><span class="sched-course">Grand Traverse Resort</span></div>
+        <div class="sched-card-header"><span style="font-size:20px">🏆</span><span class="sched-course">Grand Traverse Resort</span><span class="sched-time" style="margin-left:auto;">🕙 10:50 AM</span></div>
         <div class="sched-body">
           <div class="sched-format-tag">🎯 Round 4 — Singles Match Play (Blind Ranking)</div>
           <div class="sched-points">
@@ -712,6 +735,27 @@ input,textarea{font-family:inherit;outline:none;}
         <button id="loc-toggle-btn" class="btn btn-sm btn-ghost" onclick="toggleLocationSharing()" style="font-size:12px;">📍 Share Location</button>
       </div>
       <div id="course-map"></div>
+    </div>
+
+    <!-- CADDY AI BUTTON -->
+    <button id="caddy-btn" onclick="toggleCaddy()" title="Ask the Caddy"><img src="caddy-icon.png" alt="Caddy"></button>
+
+    <!-- CADDY AI PANEL -->
+    <div id="caddy-panel">
+      <div id="caddy-header">
+        <div id="caddy-avatar"><img src="caddy-icon.png" alt="Caddy"></div>
+        <div>
+          <div class="caddy-hdr-name">Caddy</div>
+          <div class="caddy-hdr-sub">Weather · Scores · Rules</div>
+        </div>
+        <button id="caddy-close-btn" onclick="toggleCaddy()">✕</button>
+      </div>
+      <div id="caddy-messages"></div>
+      <div id="caddy-input-row">
+        <input id="caddy-input" placeholder="Ask about weather, scores…" onkeydown="if(event.key==='Enter')askCaddy()">
+        <button id="caddy-mic-btn" onclick="startCaddyVoice()" title="Voice input">🎤</button>
+        <button id="caddy-send-btn" onclick="askCaddy()">➤</button>
+      </div>
     </div>
 
     <!-- DASHBOARD OVERLAY -->
@@ -968,7 +1012,7 @@ input,textarea{font-family:inherit;outline:none;}
 const ROUNDS = [
   {
     id:'round1', name:'Round 1', course:'The Crown Golf Club',
-    date:'Thu Aug 27', format:'scramble', formatLabel:'2v2 Scramble',
+    date:'Thu Aug 27', teeTime:'10:50 AM', format:'scramble', formatLabel:'2v2 Scramble',
     tee:'Blue', rating:'69.5', slope:'124',
     // Blue tee: Par 72. Par 3s: holes 3, 9, 12, 16
     par:    [5,  4,  3,  5,  4,  4,  4,  4,  3,   4,  4,  3,  4,  5,  4,  3,  5,  4],
@@ -976,7 +1020,7 @@ const ROUNDS = [
   },
   {
     id:'round2', name:'Round 2', course:'Sugar Loaf — Old Course',
-    date:'Fri Aug 28', format:'stableford', formatLabel:'Stableford Combined',
+    date:'Fri Aug 28', teeTime:'9:00 AM', format:'stableford', formatLabel:'Stableford Combined',
     tee:'White', rating:'69.9', slope:'118',
     // White tee: Par 72. Par 3s: holes 4, 6, 16, 18
     par:    [4,  4,  4,  3,  4,  3,  5,  4,  5,   4,  4,  5,  4,  4,  4,  3,  5,  3],
@@ -984,7 +1028,7 @@ const ROUNDS = [
   },
   {
     id:'round3', name:'Round 3', course:'Manitou Passage',
-    date:'Fri Aug 28', format:'alt_shot', formatLabel:'Alt-Shot / Scramble',
+    date:'Fri Aug 28', teeTime:'3:00 PM', format:'alt_shot', formatLabel:'Alt-Shot / Scramble',
     tee:'Blue', rating:'70.4', slope:'131',
     // Blue tee: Par 71. Par 3s: holes 3, 7, 13, 15, 17
     par:    [4,  4,  3,  4,  5,  4,  3,  5,  4,   5,  4,  4,  3,  4,  3,  4,  3,  5],
@@ -992,7 +1036,7 @@ const ROUNDS = [
   },
   {
     id:'round4', name:'Round 4', course:'Grand Traverse Resort',
-    date:'Sat Aug 29', format:'singles_match', formatLabel:'Singles Match Play',
+    date:'Sat Aug 29', teeTime:'10:50 AM', format:'singles_match', formatLabel:'Singles Match Play',
     tee:'Blue', rating:'71.2', slope:'136',
     // Blue tee: Par 70. Par 3s: holes 6, 8, 10, 16
     par:    [4,  5,  4,  4,  4,  3,  4,  3,  5,   3,  4,  4,  4,  4,  4,  3,  4,  4],
@@ -3329,6 +3373,179 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 // ═══════════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+// CADDY AI ASSISTANT
+// ═══════════════════════════════════════════════════
+
+let caddyOpen = false;
+let caddyVoiceActive = false;
+
+function toggleCaddy() {
+  caddyOpen = !caddyOpen;
+  document.getElementById('caddy-panel').classList.toggle('open', caddyOpen);
+  if (caddyOpen) {
+    const msgs = document.getElementById('caddy-messages');
+    if (!msgs.children.length) {
+      addCaddyMsg('bot', "🏌️ Hey, I'm your caddy! I can pull up live weather & wind at any course, show score updates, tee times, or answer rules questions. What do you need?");
+    }
+    setTimeout(() => document.getElementById('caddy-input').focus(), 50);
+  }
+}
+
+async function askCaddy() {
+  const input = document.getElementById('caddy-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  addCaddyMsg('user', q);
+  const thinkEl = addCaddyMsg('bot', '⛳ Looking that up…', 'thinking');
+  const answer = await caddyAnswer(q.toLowerCase());
+  thinkEl.remove();
+  addCaddyMsg('bot', answer);
+}
+
+function addCaddyMsg(role, text, cls = '') {
+  const msgs = document.getElementById('caddy-messages');
+  const div = document.createElement('div');
+  div.className = 'caddy-msg caddy-msg-' + role + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function caddyAnswer(q) {
+  const isWeather = /weather|wind|rain|temp|forecast|condition|hot|cold|sunny|cloud|feels|humid|storm|degree/.test(q);
+  const isScore   = /score|lead|win|point|stand|michigan|superior|leaderboard|who.s winning|who is winning|tied|ahead/.test(q);
+  const isCtp     = /closest|ctp|pin|par 3|par3/.test(q);
+  const isSched   = /tee|time|schedule|when|today|round|start|kick/.test(q);
+  const isRules   = /rule|format|scramble|stableford|match play|alt.?shot|skin|point system|how does/.test(q);
+  const isMvp     = /mvp|best player|top player|individual/.test(q);
+
+  if (isWeather) return await getCaddyWeather(q);
+  if (isScore)   return getCaddyScores();
+  if (isCtp)     return getCaddyCtp();
+  if (isSched)   return getCaddySchedule();
+  if (isRules)   return getCaddyRules(q);
+  if (isMvp)     return getCaddyMvp();
+  return "🤔 I can help with:\n• Weather & wind at any course\n• Live scores & standings\n• Tee times & schedule\n• CTP leaders\n• Tournament rules\n\nTry asking \"what's the wind like?\" or \"who's winning?\"";
+}
+
+async function getCaddyWeather(q) {
+  // Pick course — default to round 1, or user can ask about a specific round
+  let roundId = 'round1';
+  if (/round 2|sugar loaf|friday morning/.test(q)) roundId = 'round2';
+  else if (/round 3|manitou|friday afternoon/.test(q)) roundId = 'round3';
+  else if (/round 4|grand traverse|saturday/.test(q)) roundId = 'round4';
+
+  const loc = COURSE_LOCATIONS[roundId];
+  const round = ROUNDS.find(r => r.id === roundId);
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,weathercode&wind_speed_unit=mph&temperature_unit=fahrenheit&timezone=America%2FDetroit`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const c = data.current;
+    const desc = caddyWmoDesc(c.weathercode);
+    const dir  = caddyDegToCompass(c.wind_direction_10m);
+    const wind = Math.round(c.wind_speed_10m);
+    const gust = Math.round(c.wind_gusts_10m);
+    const tip  = wind > 15 ? '\n🏌️ Tip: Club up into the wind, ball back in your stance.' : wind > 8 ? '\n🏌️ Tip: Wind factor — add half a club.' : '\n🏌️ Tip: Light breeze, play it straight.';
+    return `${desc} at ${round.course}\n🌡 ${Math.round(c.temperature_2m)}°F (feels ${Math.round(c.apparent_temperature)}°F)\n💨 ${dir} at ${wind} mph, gusts to ${gust} mph\n🌧 Rain chance: ${c.precipitation_probability}%${tip}`;
+  } catch(e) {
+    return '⚠️ Weather data unavailable right now. Check weather.gov for northern Michigan.';
+  }
+}
+
+function caddyWmoDesc(code) {
+  if (code === 0)            return '☀️ Clear sky';
+  if (code <= 2)             return '🌤 Partly cloudy';
+  if (code === 3)            return '☁️ Overcast';
+  if (code <= 48)            return '🌫 Foggy';
+  if (code <= 55)            return '🌦 Light drizzle';
+  if (code <= 65)            return '🌧 Rain';
+  if (code <= 75)            return '❄️ Snow';
+  if (code <= 82)            return '🌦 Rain showers';
+  return '⛈ Thunderstorm';
+}
+
+function caddyDegToCompass(deg) {
+  return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg / 45) % 8];
+}
+
+function getCaddyScores() {
+  const {mPts, sPts, breakdown} = calcTeamPoints();
+  let out = '';
+  if (mPts > sPts)      out = `🟢 Team Michigan leads ${mPts}–${sPts}`;
+  else if (sPts > mPts) out = `🔵 Team Superior leads ${sPts}–${mPts}`;
+  else                  out = `⚖️ All square — ${mPts}–${sPts}`;
+  if (breakdown.length) {
+    out += '\n\nBreakdown:';
+    breakdown.forEach(b => {
+      if (b.m) out += `\n  MICH +${b.m} (${b.label})`;
+      if (b.s) out += `\n  SUP  +${b.s} (${b.label})`;
+    });
+  } else {
+    out += '\n\nNo rounds scored yet — check back once play begins!';
+  }
+  return out;
+}
+
+function getCaddyCtp() {
+  const entries = Object.entries(state.ctp).filter(([,c]) => c && c.playerId && c.distance);
+  if (!entries.length) return '📍 No CTP winners recorded yet. Closest to the pin contests happen on all par 3s.';
+  let out = '📍 CTP Leaders:\n';
+  entries.forEach(([key, c]) => {
+    const [roundId, holeStr] = key.split('_hole');
+    const round = ROUNDS.find(r => r.id === roundId);
+    const player = state.players[c.playerId];
+    out += `\n  Hole ${holeStr} (${round?.name||roundId}): ${player?.name||c.playerId} — ${c.distance} ft`;
+  });
+  return out;
+}
+
+function getCaddySchedule() {
+  let out = '📅 Tee Times:\n';
+  ROUNDS.forEach(r => {
+    out += `\n  ${r.name} · ${r.date}`;
+    if (r.teeTime) out += ` @ ${r.teeTime}`;
+    out += `\n  ${r.course} — ${r.formatLabel}`;
+  });
+  return out;
+}
+
+function getCaddyRules(q) {
+  if (/scramble/.test(q))   return '🏌️ Scramble: All players hit each shot, team picks the best ball and everyone plays from there.';
+  if (/stableford/.test(q)) return '📊 Stableford: Triple bogey+=0pts · Double bogey=1pt · Bogey=2pts · Par=3pts · Birdie=5pts · Eagle=7pts. Highest team total wins.';
+  if (/alt.?shot/.test(q))  return '🔀 Alt-Shot: Tee shots = scramble. Then alternate shots from the best drive until holed.';
+  if (/match play/.test(q)) return '🎯 Match Play: Hole-by-hole. Most holes won in a matchup = 1 team point. Biggest margin of victory = bonus 1 point.';
+  if (/skin/.test(q))       return '💰 Skins: Lowest score on any hole = 0.5 team points. Ties carry over.';
+  return '📋 Points system:\n• Match Win = 1 pt\n• Aggregate Holes Won = 1 pt\n• CTP (each par 3) = 0.5 pts\n• Skins = 0.5 pts each\n• R4 Largest Margin = bonus 1 pt';
+}
+
+function getCaddyMvp() {
+  const mvp = getMVP();
+  if (!mvp) return '🏅 No individual points recorded yet.';
+  return `🏅 Current MVP: ${mvp.name} (${mvp.team === 'michigan' ? 'Michigan' : 'Superior'}) with ${mvp.pts} individual pts`;
+}
+
+function startCaddyVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Voice not supported in this browser'); return; }
+  const rec = new SR();
+  rec.lang = 'en-US';
+  rec.interimResults = false;
+  const micBtn = document.getElementById('caddy-mic-btn');
+  micBtn.textContent = '🔴';
+  micBtn.classList.add('listening');
+  rec.onresult = e => {
+    document.getElementById('caddy-input').value = e.results[0][0].transcript;
+    askCaddy();
+  };
+  rec.onerror = () => showToast('Voice recognition failed — try again');
+  rec.onend = () => { micBtn.textContent = '🎤'; micBtn.classList.remove('listening'); };
+  rec.start();
+}
 
 let toastTimer;
 function showToast(msg) {

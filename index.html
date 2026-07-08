@@ -585,8 +585,10 @@ input,textarea{font-family:inherit;outline:none;}
           <div class="sched-points">
             <strong>Triple bogey+</strong> = 0 pts · <strong>Double bogey</strong> = 1 pt · <strong>Bogey</strong> = 2 pts<br>
             <strong>Par</strong> = 3 pts · <strong>Birdie</strong> = 5 pts · <strong>Eagle</strong> = 7 pts<br>
-            Team with highest combined Stableford score = 1 team point<br>
-            CTP + Skins still in play (0.5 pts each)
+            Combined Stableford per hole — higher team total wins the hole<br>
+            <strong>Match Win</strong> (most holes won per matchup) = 1 team point<br>
+            <strong>Aggregate</strong> (highest total Stableford across all matchups) = 1 team point<br>
+            <strong>Closest to the Pin</strong> = 0.5 pts · <strong>Skins</strong> (lowest raw score on hole) = 0.5 pts
           </div>
         </div>
       </div>
@@ -598,7 +600,8 @@ input,textarea{font-family:inherit;outline:none;}
             <strong>Tee shots</strong> = Scramble (all hit, pick best)<br>
             <strong>Approach shots</strong> = Alternate shot from best drive<br>
             <strong>Putting</strong> = Scramble (all putt, pick best)<br>
-            Match Win + CTP + Skins still in play
+            <strong>Match Win</strong> = 1 team point · <strong>Aggregate Holes</strong> = 1 team point<br>
+            <strong>Closest to the Pin</strong> = 0.5 pts · <strong>Skins</strong> (lowest team score on hole) = 0.5 pts
           </div>
         </div>
       </div>
@@ -611,9 +614,9 @@ input,textarea{font-family:inherit;outline:none;}
           <div class="sched-format-tag">🎯 Round 4 — Singles Match Play (Blind Ranking)</div>
           <div class="sched-points">
             Players ranked by individual points earned. Matchups assigned blind — players ranked 1st face unknown opponent.<br>
-            <strong>Match Win</strong> = 1 team point<br>
-            <strong>Largest Margin of Victory</strong> (hole differential) = bonus 1 team point<br>
-            CTP + Skins still in play
+            <strong>Match Win</strong> (1v1 individual match) = 1 team point<br>
+            <strong>Largest Margin of Victory</strong> (biggest hole differential) = bonus 1 team point<br>
+            <strong>Closest to the Pin</strong> = 0.5 pts · <strong>Skins</strong> (lowest raw score on hole) = 0.5 pts
           </div>
         </div>
       </div>
@@ -686,21 +689,20 @@ input,textarea{font-family:inherit;outline:none;}
         <h3>🏆 Point System</h3>
         <ul>
           <li><strong>Match Win</strong> — Team with more holes won in a matchup earns <strong>1 team point</strong></li>
-          <li><strong>Aggregate Holes</strong> — Team with most total holes won across all matchups in a round earns <strong>1 team point</strong></li>
-          <li><strong>Closest to the Pin</strong> — Winning team of each par 3 CTP earns <strong>0.5 team points</strong> (cash prize for the individual)</li>
-          <li><strong>Skins</strong> — Team whose player posts the lowest score on any given hole earns <strong>0.5 team points</strong> per skin</li>
-          <li><strong>Largest Margin</strong> (Round 4 only) — Matchup with the biggest hole differential earns <strong>1 bonus team point</strong></li>
+          <li><strong>Aggregate Holes</strong> — Team with most total holes won (or highest total Stableford in Round 2) across all matchups earns <strong>1 team point</strong></li>
+          <li><strong>Closest to the Pin</strong> — Team of the winning player on each par 3 CTP earns <strong>0.5 team points</strong> (cash prize for the individual)</li>
+          <li><strong>Skins</strong> — Team whose player/group posts the outright lowest raw score on any hole earns <strong>0.5 team points</strong>. Ties = no skin awarded.</li>
+          <li><strong>Largest Margin</strong> (Round 4 only) — Team with the biggest individual hole differential earns <strong>1 bonus team point</strong></li>
         </ul>
       </div>
 
       <div class="rules-section">
         <h3>📊 Round Formats</h3>
-        <p><strong>Round 1 — The Crown Golf Club:</strong> 2v2 Scramble. All players hit from the tee; the team picks the best shot and everyone plays from that spot, repeating until holed.</p>
-        <div class="rules-highlight">5 matchups of 2v2 covering all 10 players per team.</div>
-        <p><strong>Round 2 — Sugar Loaf Old Course:</strong> Stableford Combined. Everyone plays individual stroke play, Stableford points awarded per hole. Team with highest combined total wins the hole.</p>
+        <p><strong>Round 1 — The Crown Golf Club:</strong> 2v2 Scramble. All players hit from the tee; the team picks the best shot and plays from that spot, repeating until holed. 5 matchups of 2v2 cover all 10 players per team. Scoring: Match Win + Aggregate Holes + CTP + Skins.</p>
+        <p><strong>Round 2 — Sugar Loaf Old Course:</strong> Stableford Combined. Individual stroke play with Stableford points per hole. Each 2-player matchup adds both players' Stableford scores per hole — the team with the higher combined total wins that hole. Team with more holes won earns 1 point. Team with the highest total Stableford across all matchups earns 1 Aggregate point. CTP and Skins are determined by lowest raw stroke count.</p>
         <div class="rules-highlight">Triple+: 0pts · Double: 1pt · Bogey: 2pts · Par: 3pts · Birdie: 5pts · Eagle: 7pts</div>
-        <p><strong>Round 3 — Manitou Passage:</strong> Alt-Shot / Scramble Combo. All players hit tee shots → scramble to best drive → alternate shots on approach → scramble putting.</p>
-        <p><strong>Round 4 — Grand Traverse Resort:</strong> Singles Match Play with blind ranking. Players ranked by individual points earned; matchups assigned without knowing your opponent.</p>
+        <p><strong>Round 3 — Manitou Passage:</strong> Alt-Shot / Scramble Combo. All players hit tee shots → scramble to best drive → alternate shots on approach → scramble putting. Scored identically to Round 1: Match Win + Aggregate Holes + CTP + Skins.</p>
+        <p><strong>Round 4 — Grand Traverse Resort:</strong> 1v1 Singles Match Play with blind ranking. Players ranked by individual points earned across Rounds 1–3; matchups assigned without knowing your opponent. Win your individual match = 1 team point. Biggest hole differential across all matches = bonus 1 team point. CTP and Skins still in play.</p>
       </div>
 
       <div class="rules-section">
@@ -2777,25 +2779,91 @@ function saveMatchup() {
 // LEADERBOARD
 // ═══════════════════════════════════════════════════
 
+// Per hole, find the unique lowest raw stroke score across all teams/players.
+// Team formats (scramble/alt_shot): compare team_michigan vs team_superior per matchup.
+// Individual formats (stableford/singles): compare individual player raw scores.
+// Outright lowest (no tie) = 0.5 skins pts for that team.
+function calcSkinsForRound(round, matchups) {
+  let mSkins = 0, sSkins = 0;
+  const isTeamScore = isTeamScoreFormat(round);
+  for (let h = 1; h <= 18; h++) {
+    const entries = []; // {score, team}
+    matchups.forEach(m => {
+      const sc = state.scores[m.id]||{holes:{}};
+      const hole = sc.holes?.[h];
+      if (!hole) return;
+      if (isTeamScore) {
+        const mv = hole['team_michigan'];
+        const sv = hole['team_superior'];
+        if (mv !== undefined && mv !== null && mv !== '') entries.push({score:Number(mv), team:'michigan'});
+        if (sv !== undefined && sv !== null && sv !== '') entries.push({score:Number(sv), team:'superior'});
+      } else {
+        (m.michigan||[]).forEach(id => {
+          const s = hole[id];
+          if (s !== undefined && s !== null && s !== '') entries.push({score:Number(s), team:'michigan'});
+        });
+        (m.superior||[]).forEach(id => {
+          const s = hole[id];
+          if (s !== undefined && s !== null && s !== '') entries.push({score:Number(s), team:'superior'});
+        });
+      }
+    });
+    if (entries.length < 2) continue;
+    const minScore = Math.min(...entries.map(e => e.score));
+    const winners = entries.filter(e => e.score === minScore);
+    if (winners.length === 1) {
+      if (winners[0].team === 'michigan') mSkins++;
+      else sSkins++;
+    }
+    // Tied low score = no skin awarded
+  }
+  return {mSkins, sSkins};
+}
+
 function calcAllPoints() {
   let mPts = 0, sPts = 0;
   const breakdown = [];
 
-  // Match play / alt shot / singles — per round
   ROUNDS.forEach(round => {
     const matchups = Object.values(state.matchups[round.id]||{});
     if (!matchups.length) return;
 
     if (round.format === 'stableford') {
-      let mTotal=0, sTotal=0;
+      // Per-matchup hole wins: compare combined Stableford per hole (higher total wins hole)
+      // Plus aggregate: team with highest total Stableford across all matchups = 1 pt
+      let mMatchWins=0, sMatchWins=0, mTotalStable=0, sTotalStable=0;
       matchups.forEach(m => {
         const sc = state.scores[m.id]||{holes:{}};
-        mTotal += calcTeamStableford(m.michigan||[], sc, round.par);
-        sTotal += calcTeamStableford(m.superior||[], sc, round.par);
+        let mHoles=0, sHoles=0;
+        for (let h=1; h<=18; h++) {
+          const hole = sc.holes?.[h];
+          if (!hole) continue;
+          const par = round.par[h-1];
+          let mCombo=0, sCombo=0, mHas=false, sHas=false;
+          (m.michigan||[]).forEach(id => {
+            const s = hole[id];
+            if (s!==undefined&&s!==null&&s!=='') { mCombo+=stablefordPoints(Number(s),par); mHas=true; }
+          });
+          (m.superior||[]).forEach(id => {
+            const s = hole[id];
+            if (s!==undefined&&s!==null&&s!=='') { sCombo+=stablefordPoints(Number(s),par); sHas=true; }
+          });
+          if (!mHas||!sHas) continue;
+          if (mCombo > sCombo) mHoles++;
+          else if (sCombo > mCombo) sHoles++;
+        }
+        if (mHoles > sHoles) mMatchWins++;
+        else if (sHoles > mHoles) sMatchWins++;
+        mTotalStable += calcTeamStableford(m.michigan||[], sc, round.par);
+        sTotalStable += calcTeamStableford(m.superior||[], sc, round.par);
       });
-      if (mTotal > sTotal) { mPts++; breakdown.push({label:`${round.name} Stableford Win`,m:1,s:0}); }
-      else if (sTotal > mTotal) { sPts++; breakdown.push({label:`${round.name} Stableford Win`,m:0,s:1}); }
+      mPts += mMatchWins; sPts += sMatchWins;
+      if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
+      if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
+      if (mTotalStable > sTotalStable) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
+      else if (sTotalStable > mTotalStable) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
     } else {
+      // scramble, alt_shot, singles_match — hole-by-hole raw score comparison
       let mAgg=0, sAgg=0, mMatchWins=0, sMatchWins=0;
       let biggestDiff=0, biggestTeam=null;
       matchups.forEach(m => {
@@ -2807,22 +2875,25 @@ function calcAllPoints() {
         const diff = Math.abs(mWins-sWins);
         if (diff > biggestDiff) { biggestDiff=diff; biggestTeam=mWins>sWins?'michigan':'superior'; }
       });
-      // Per-match points
       mPts += mMatchWins; sPts += sMatchWins;
       if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
       if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
-      // Aggregate
       if (mAgg > sAgg) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
       else if (sAgg > mAgg) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
-      // Largest margin (Round 4)
       if (round.format==='singles_match' && biggestTeam) {
         if (biggestTeam==='michigan') { mPts++; breakdown.push({label:'Round 4 Largest Margin',m:1,s:0}); }
         else { sPts++; breakdown.push({label:'Round 4 Largest Margin',m:0,s:1}); }
       }
     }
+
+    // Skins — lowest raw stroke score on a hole, outright (no tie) = 0.5 pts
+    const {mSkins, sSkins} = calcSkinsForRound(round, matchups);
+    mPts += mSkins * 0.5; sPts += sSkins * 0.5;
+    if (mSkins) breakdown.push({label:`${round.name} Skins`,m:mSkins*0.5,s:0});
+    if (sSkins) breakdown.push({label:`${round.name} Skins`,m:0,s:sSkins*0.5});
   });
 
-  // CTP points — only count entries with a player AND a recorded distance
+  // CTP — only count entries with a player AND a recorded distance
   const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId && c.distance && c.team);
   ctpEntries.forEach(c => {
     if (c.team==='michigan') mPts+=0.5;

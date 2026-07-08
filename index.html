@@ -1117,8 +1117,10 @@ function showPlayerProfile(playerId) {
 
   const initials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
   const avatarEl = document.getElementById('ppv-avatar');
+  avatarEl.innerHTML = '';
+  avatarEl.style.fontSize = '';
   if (p.photoUrl) {
-    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
+    avatarEl.innerHTML = `<img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentNode.innerHTML='${initials}';this.parentNode.style.fontSize='28px';">`;
   } else {
     avatarEl.textContent = initials;
     avatarEl.style.fontSize = '28px';
@@ -2279,11 +2281,15 @@ function renderLeaderboard() {
       ${players.map((p,i)=>{
         const phoneLink = p.phone ? `<a href="tel:${p.phone}" onclick="event.stopPropagation();" style="text-decoration:none;font-size:18px;line-height:1;" title="Call ${p.name}">📱</a>` : '';
         const venmoLink = p.venmoId ? `<a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" onclick="event.stopPropagation();" style="text-decoration:none;font-size:18px;line-height:1;" title="Pay ${p.name} on Venmo">💸</a>` : '';
-        const teamDot = p.team !== 'unassigned' ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)'};margin-right:5px;vertical-align:middle;flex-shrink:0;"></span>` : '';
+        const teamColor = p.team==='michigan' ? 'var(--michigan-light)' : p.team==='superior' ? 'var(--superior-light)' : 'var(--border)';
+        const pInitials = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+        const avatarHtml = p.photoUrl
+          ? `<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid ${teamColor};"><img src="${p.photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentNode.innerHTML='${pInitials}';this.parentNode.style.cssText='width:34px;height:34px;border-radius:50%;border:2px solid ${teamColor};background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text2);flex-shrink:0;';"></div>`
+          : `<div style="width:34px;height:34px;border-radius:50%;border:2px solid ${teamColor};background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--text2);flex-shrink:0;">${pInitials}</div>`;
         return `
         <div class="lb-table-row" onclick="showPlayerProfile('${p.id}')" style="cursor:pointer;">
           <div class="lb-rank">${i+1}</div>
-          <div style="font-size:12px;font-weight:600;display:flex;align-items:center;">${teamDot}${p.name}</div>
+          <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;">${avatarHtml}${p.name}</div>
           <div style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">${phoneLink}${venmoLink}</div>
           <div style="text-align:center;font-weight:800;color:${p.pts>0?'var(--gold)':'var(--text3)'};">${p.pts||0}</div>
         </div>`;

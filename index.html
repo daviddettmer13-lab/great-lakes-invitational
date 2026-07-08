@@ -63,8 +63,9 @@ input,textarea{font-family:inherit;outline:none;}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:color .15s;gap:2px;padding:6px 2px;}
 .nav-item.active{color:var(--gold);}
 .nav-item:not(.active){color:var(--text3);}
-.nav-icon{font-size:18px;line-height:1;}
+.nav-icon{font-size:18px;line-height:1;position:relative;display:inline-block;}
 .nav-label{font-size:8.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.nav-badge{position:absolute;top:-4px;right:-8px;background:#e53935;border-radius:10px;min-width:16px;height:16px;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.6);}
 
 /* ── PAGES ───────────────────────────────────────── */
 .page{display:none;padding:16px;padding-bottom:24px;}
@@ -684,14 +685,14 @@ input,textarea{font-family:inherit;outline:none;}
     <div class="nav-item" onclick="switchTab('scorecards')">
       <span class="nav-icon">⛳</span><span class="nav-label">Cards</span>
     </div>
-    <div class="nav-item" onclick="switchTab('leaderboard')">
-      <span class="nav-icon">🏆</span><span class="nav-label">Board</span>
+    <div class="nav-item" id="nav-leaderboard" onclick="switchTab('leaderboard')">
+      <span class="nav-icon">🏆<span class="nav-badge" id="badge-board" style="display:none;">!</span></span><span class="nav-label">Board</span>
     </div>
     <div class="nav-item" onclick="switchTab('rules')">
       <span class="nav-icon">📋</span><span class="nav-label">Rules</span>
     </div>
-    <div class="nav-item" onclick="switchTab('chat')">
-      <span class="nav-icon">💬</span><span class="nav-label">Chat</span>
+    <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
+      <span class="nav-icon">💬<span class="nav-badge" id="badge-chat" style="display:none;">0</span></span><span class="nav-label">Chat</span>
     </div>
   </nav>
 
@@ -732,6 +733,19 @@ input,textarea{font-family:inherit;outline:none;}
     <p style="font-size:11px;color:var(--text3);margin:6px 0 12px;">Must be paid by end of the event.</p>
     <button class="btn btn-primary btn-full" onclick="createBet()">Post Bet →</button>
     <button class="btn btn-ghost btn-full" onclick="closeModal('create-bet-modal')" style="margin-top:8px;">Cancel</button>
+  </div>
+</div>
+
+<!-- Resolve Bet Modal -->
+<div class="modal-overlay" id="resolve-bet-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="font-size:18px;font-weight:900;color:var(--text);">🏆 Resolve Bet</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;">Select who won and how much</div>
+    </div>
+    <div id="resolve-bet-content" style="margin-bottom:14px;"></div>
+    <button class="btn btn-primary btn-full" onclick="confirmResolveBet()" style="background:var(--gold);color:#000;font-weight:800;">Settle Bet →</button>
+    <button class="btn btn-ghost btn-full" onclick="closeModal('resolve-bet-modal')" style="margin-top:8px;">Cancel</button>
   </div>
 </div>
 
@@ -887,6 +901,11 @@ let selectedUserId = null;
 let editingMatchupRoundId = null;
 let currentScorecardHole = 1;
 let scorecardViewMode = 'hole'; // 'hole' | 'table'
+let leaderboardDirty = false;
+let unreadChatCount = 0;
+let lastChatMessageCount = 0;
+let appInitialized = false;
+let resolvingBetId = null;
 
 // ═══════════════════════════════════════════════════
 // PERSISTENCE
@@ -964,7 +983,11 @@ function setupFirebaseListeners() {
   });
   firebaseDb.ref('gli26/matchups').on('value', snap => {
     const v = snap.val();
-    if (v) { state.matchups = v; renderLeaderboard(); }
+    if (v) {
+      state.matchups = v;
+      renderLeaderboard();
+      if (appInitialized && currentTab !== 'leaderboard') { leaderboardDirty = true; updateNavBadges(); }
+    }
   });
   firebaseDb.ref('gli26/scores').on('value', snap => {
     const v = snap.val();
@@ -973,11 +996,17 @@ function setupFirebaseListeners() {
       updateHeaderScores();
       renderLeaderboard();
       refreshActiveScorecardIfOpen();
+      if (appInitialized && currentTab !== 'leaderboard') { leaderboardDirty = true; updateNavBadges(); }
     }
   });
   firebaseDb.ref('gli26/ctp').on('value', snap => {
     const v = snap.val();
-    if (v) { state.ctp = v; updateHeaderScores(); renderLeaderboard(); }
+    if (v) {
+      state.ctp = v;
+      updateHeaderScores();
+      renderLeaderboard();
+      if (appInitialized && currentTab !== 'leaderboard') { leaderboardDirty = true; updateNavBadges(); }
+    }
   });
   firebaseDb.ref('gli26/messages').on('value', snap => {
     const v = snap.val();
@@ -985,6 +1014,11 @@ function setupFirebaseListeners() {
       if (Array.isArray(v)) state.messages = v.filter(Boolean);
       else state.messages = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
+      if (appInitialized && currentTab !== 'chat') {
+        const total = state.messages.length + (state.bets||[]).length;
+        unreadChatCount = Math.max(0, total - lastChatMessageCount);
+        updateNavBadges();
+      }
     }
   });
   firebaseDb.ref('gli26/bets').on('value', snap => {
@@ -993,6 +1027,11 @@ function setupFirebaseListeners() {
       if (Array.isArray(v)) state.bets = v.filter(Boolean);
       else state.bets = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
+      if (appInitialized && currentTab !== 'chat') {
+        const total = state.messages.length + (state.bets||[]).length;
+        unreadChatCount = Math.max(0, total - lastChatMessageCount);
+        updateNavBadges();
+      }
     }
   });
   firebaseDb.ref('gli26/completedMatches').on('value', snap => {
@@ -1001,6 +1040,7 @@ function setupFirebaseListeners() {
       state.completedMatches = v;
       renderLeaderboard();
       refreshActiveScorecardIfOpen();
+      if (appInitialized && currentTab !== 'leaderboard') { leaderboardDirty = true; updateNavBadges(); }
     }
   });
 }
@@ -1137,6 +1177,16 @@ function refreshApp() {
   showToast('✓ Refreshed');
 }
 
+function updateNavBadges() {
+  const bb = document.getElementById('badge-board');
+  const bc = document.getElementById('badge-chat');
+  if (bb) bb.style.display = leaderboardDirty ? '' : 'none';
+  if (bc) {
+    bc.style.display = unreadChatCount > 0 ? '' : 'none';
+    bc.textContent = unreadChatCount > 9 ? '9+' : String(unreadChatCount);
+  }
+}
+
 function switchTab(tab) {
   // Block roster access for non-admins
   if (tab === 'rosters' && !isAdmin()) {
@@ -1150,10 +1200,10 @@ function switchTab(tab) {
   const navItems = document.querySelectorAll('.nav-item');
   const idx = ['home','schedule','rosters','scorecards','leaderboard','rules','chat'].indexOf(tab);
   if (idx > -1) navItems[idx].classList.add('active');
-  if (tab === 'leaderboard') renderLeaderboard();
+  if (tab === 'leaderboard') { renderLeaderboard(); leaderboardDirty = false; updateNavBadges(); }
   if (tab === 'rosters') renderRosters();
   if (tab === 'scorecards') renderRoundPicker();
-  if (tab === 'chat') { renderChat(); setTimeout(()=>scrollChatBottom(), 100); }
+  if (tab === 'chat') { renderChat(); setTimeout(()=>scrollChatBottom(), 100); unreadChatCount = 0; lastChatMessageCount = state.messages.length + (state.bets||[]).length; updateNavBadges(); }
 }
 
 // ═══════════════════════════════════════════════════
@@ -2293,11 +2343,13 @@ function renderChat() {
     const msg = item;
     const mine = currentUser && msg.userId === currentUser.id;
     const time = new Date(msg.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const canDelete = isAdmin() || (mine && msg.userId !== 'system');
+    const deleteBtn = canDelete ? `<button onclick="deleteMessage('${msg.id}')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:1px 5px;opacity:.45;line-height:1;flex-shrink:0;" title="Delete">✕</button>` : '';
     return `
     <div class="chat-msg ${mine?'mine':'theirs'} ${msg.team}">
-      <div class="chat-msg-meta">
+      <div class="chat-msg-meta" style="display:flex;align-items:center;gap:4px;">
         ${!mine?`<span style="color:${msg.team==='michigan'?'var(--michigan-light)':msg.team==='superior'?'var(--superior-light)':'var(--text2)'};">${msg.name}</span>`:''}
-        <span>${time}</span>
+        <span style="flex:1;">${time}</span>${deleteBtn}
       </div>
       <div class="chat-bubble">${escHtml(msg.text)}</div>
     </div>`;
@@ -2416,10 +2468,90 @@ function declineBet(betId) {
   showToast('❌ Bet declined');
 }
 
+function deleteMessage(id) {
+  if (!currentUser) return;
+  const msg = state.messages.find(m => m.id === id);
+  if (!msg) return;
+  if (!isAdmin() && msg.userId !== currentUser.id) { showToast('🔒 Not allowed'); return; }
+  state.messages = state.messages.filter(m => m.id !== id);
+  save('messages', state.messages);
+  renderChat();
+  showToast('🗑 Message deleted');
+}
+
+function deleteBet(betId) {
+  if (!isAdmin()) { showToast('🔒 Admin only'); return; }
+  state.bets = (state.bets || []).filter(b => b.id !== betId);
+  save('bets', state.bets);
+  renderChat();
+  showToast('🗑 Bet deleted');
+}
+
+let resolveBetId = null;
+
+function showResolveBetModal(betId) {
+  const bet = state.bets.find(b => b.id === betId);
+  if (!bet) return;
+  resolveBetId = betId;
+  const accepted = bet.participants.filter(p => p.accepted && !p.declined);
+  document.getElementById('resolve-bet-content').innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;">The Bet</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px;">${escHtml(bet.description)}</div>
+      <div style="font-size:20px;font-weight:900;color:var(--gold);">$${bet.amount} each</div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">Who won? (select all winners)</div>
+    ${accepted.map(p => `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:10px;cursor:pointer;border:1px solid var(--border);margin-bottom:8px;">
+        <input type="checkbox" id="rw-${p.id}" value="${p.id}" style="width:18px;height:18px;accent-color:var(--gold);">
+        <span style="font-weight:700;flex:1;">${escHtml(p.name)}</span>
+        <span style="color:var(--gold);font-weight:700;">$</span>
+        <input type="number" id="ra-${p.id}" value="${bet.amount}" min="1" style="width:64px;padding:4px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-weight:700;text-align:center;">
+      </label>`).join('')}`;
+  showModal('resolve-bet-modal');
+}
+
+function confirmResolveBet() {
+  const bet = state.bets.find(b => b.id === resolveBetId);
+  if (!bet) return;
+  const accepted = bet.participants.filter(p => p.accepted && !p.declined);
+  const winners = accepted.filter(p => document.getElementById('rw-'+p.id)?.checked);
+  if (!winners.length) { showToast('Select at least one winner'); return; }
+  const winnerDetails = winners.map(p => ({
+    id: p.id,
+    name: p.name,
+    amount: Number(document.getElementById('ra-'+p.id)?.value || bet.amount)
+  }));
+  bet.resolved = true;
+  bet.resolution = {
+    winners: winnerDetails,
+    resolvedBy: currentUser?.name || 'Admin',
+    resolvedTs: Date.now()
+  };
+  save('bets', state.bets);
+  // Post result to group chat
+  const winnerText = winnerDetails.map(w => `${w.name} +$${w.amount}`).join(', ');
+  const resultMsg = {
+    id: genId(),
+    userId: 'system',
+    name: '💰 Bet Result',
+    team: 'all',
+    text: `BET SETTLED: "${bet.description}" → ${winnerText}  (Settled by ${bet.resolution.resolvedBy})`,
+    ts: Date.now()
+  };
+  state.messages.push(resultMsg);
+  save('messages', state.messages);
+  closeModal('resolve-bet-modal');
+  renderChat();
+  setTimeout(()=>scrollChatBottom(), 100);
+  showToast('🏆 Bet settled!');
+}
+
 function renderBetCard(bet) {
   const time = new Date(bet.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   const myEntry = currentUser && bet.participants.find(p => p.id === currentUser.id);
   const canRespond = myEntry && !myEntry.accepted && !myEntry.declined && !bet.locked;
+  const canResolve = bet.locked && !bet.resolved && (myEntry?.accepted || isAdmin());
 
   const participantsHtml = bet.participants.map(p => {
     const cls = p.declined ? 'declined' : p.accepted ? 'accepted' : '';
@@ -2427,15 +2559,29 @@ function renderBetCard(bet) {
     return `<div class="bet-participant ${cls}">${icon} ${escHtml(p.name)}</div>`;
   }).join('');
 
-  const statusHtml = bet.locked
-    ? `<div class="bet-locked-banner">🔒 BET LOCKED — Must be paid by end of the event</div>`
-    : `<div class="bet-pending-banner">⏳ Waiting for everyone to accept…</div>`;
+  let statusHtml;
+  if (bet.resolved && bet.resolution) {
+    const winners = bet.resolution.winners.map(w => `${escHtml(w.name)} +$${w.amount}`).join(', ');
+    statusHtml = `<div class="bet-locked-banner" style="background:var(--michigan-light);color:#000;">🏆 SETTLED — ${winners}</div>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px;">Settled by ${escHtml(bet.resolution.resolvedBy)}</div>`;
+  } else if (bet.locked) {
+    statusHtml = `<div class="bet-locked-banner">🔒 BET LOCKED — Must be paid by end of the event</div>`;
+  } else {
+    statusHtml = `<div class="bet-pending-banner">⏳ Waiting for everyone to accept…</div>`;
+  }
 
   const actionBtns = canRespond ? `
     <div style="display:flex;gap:8px;margin-top:10px;">
       <button class="btn btn-primary" style="flex:1;padding:8px 4px;font-size:13px;" onclick="acceptBet('${bet.id}')">✅ Accept</button>
       <button class="btn btn-ghost" style="flex:1;padding:8px 4px;font-size:13px;" onclick="declineBet('${bet.id}')">❌ Decline</button>
     </div>` : '';
+
+  const resolveBtn = canResolve ? `
+    <div style="margin-top:10px;">
+      <button class="btn btn-full" style="background:var(--gold);color:#000;font-weight:800;padding:10px;border-radius:10px;border:none;cursor:pointer;width:100%;font-size:13px;" onclick="showResolveBetModal('${bet.id}')">🏆 Resolve Bet</button>
+    </div>` : '';
+
+  const adminDeleteBtn = isAdmin() ? `<button onclick="deleteBet('${bet.id}')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 4px;opacity:.4;flex-shrink:0;" title="Delete bet">✕</button>` : '';
 
   return `
   <div class="bet-card">
@@ -2445,11 +2591,13 @@ function renderBetCard(bet) {
         <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">${escHtml(bet.proposerName)} proposed a bet • ${time}</div>
         <div class="bet-amount">$${bet.amount}</div>
       </div>
+      ${adminDeleteBtn}
     </div>
     <div class="bet-desc">${escHtml(bet.description)}</div>
     <div class="bet-participants">${participantsHtml}</div>
     ${statusHtml}
     ${actionBtns}
+    ${resolveBtn}
   </div>`;
 }
 
@@ -2723,6 +2871,8 @@ function init() {
   renderChat();
   updateChatUserLabel();
   updateHeaderAvatar();
+  lastChatMessageCount = state.messages.length + (state.bets||[]).length;
+  appInitialized = true;
 }
 
 // Boot the app once DOM is fully ready

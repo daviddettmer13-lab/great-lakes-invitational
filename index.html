@@ -497,10 +497,6 @@ input,textarea{font-family:inherit;outline:none;}
       </div>
       <!-- Nav grid -->
       <div class="home-launcher-grid">
-        <div class="home-tile" onclick="switchTab('home')">
-          <div class="home-tile-circle">🏠</div>
-          <div class="home-tile-label">Home</div>
-        </div>
         <div class="home-tile" onclick="switchTab('schedule')">
           <div class="home-tile-circle">📅</div>
           <div class="home-tile-label">Schedule</div>
@@ -511,11 +507,11 @@ input,textarea{font-family:inherit;outline:none;}
         </div>
         <div class="home-tile" onclick="switchTab('scorecards')">
           <div class="home-tile-circle">⛳</div>
-          <div class="home-tile-label">Cards</div>
+          <div class="home-tile-label">Scorecards</div>
         </div>
         <div class="home-tile" onclick="switchTab('leaderboard')">
           <div class="home-tile-circle">🏆</div>
-          <div class="home-tile-label">Board</div>
+          <div class="home-tile-label">Leaderboard</div>
         </div>
         <div class="home-tile" onclick="switchTab('rules')">
           <div class="home-tile-circle">📋</div>
@@ -830,9 +826,6 @@ input,textarea{font-family:inherit;outline:none;}
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <div class="nav-item active" onclick="switchTab('home')">
-      <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
-    </div>
     <div class="nav-item" onclick="switchTab('schedule')">
       <span class="nav-icon">📅</span><span class="nav-label">Schedule</span>
     </div>
@@ -840,10 +833,10 @@ input,textarea{font-family:inherit;outline:none;}
       <span class="nav-icon">👥</span><span class="nav-label">Rosters</span>
     </div>
     <div class="nav-item" onclick="switchTab('scorecards')">
-      <span class="nav-icon">⛳</span><span class="nav-label">Cards</span>
+      <span class="nav-icon">⛳</span><span class="nav-label">Scorecards</span>
     </div>
     <div class="nav-item" id="nav-leaderboard" onclick="switchTab('leaderboard')">
-      <span class="nav-icon">🏆<span class="nav-badge" id="badge-board" style="display:none;">!</span></span><span class="nav-label">Board</span>
+      <span class="nav-icon">🏆<span class="nav-badge" id="badge-board" style="display:none;">!</span></span><span class="nav-label">Leaderboard</span>
     </div>
     <div class="nav-item" onclick="switchTab('rules')">
       <span class="nav-icon">📋</span><span class="nav-label">Rules</span>
@@ -1408,7 +1401,7 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   const navItems = document.querySelectorAll('.nav-item');
-  const idx = ['home','schedule','rosters','scorecards','leaderboard','rules','chat','map'].indexOf(tab);
+  const idx = ['schedule','rosters','scorecards','leaderboard','rules','chat','map'].indexOf(tab);
   if (idx > -1) navItems[idx].classList.add('active');
   if (tab === 'leaderboard') { renderLeaderboard(); leaderboardDirty = false; updateNavBadges(); }
   if (tab === 'rosters') renderRosters();

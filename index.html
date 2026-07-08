@@ -66,6 +66,10 @@ input,textarea{font-family:inherit;outline:none;}
 .nav-icon{font-size:18px;line-height:1;position:relative;display:inline-block;}
 .nav-label{font-size:8.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
 .nav-badge{position:absolute;top:-4px;right:-8px;background:#e53935;border-radius:10px;min-width:16px;height:16px;font-size:9px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.6);}
+/* ── SIGNATURE CANVAS ────────────────────────────── */
+.sig-canvas{touch-action:none;background:#0a0a0a;border:2px solid var(--border);border-radius:10px;cursor:crosshair;display:block;width:100%;}
+.sig-canvas.has-sig{border-color:var(--gold);}
+.sig-team-label{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
 
 /* ── PAGES ───────────────────────────────────────── */
 .page{display:none;padding:16px;padding-bottom:24px;}
@@ -238,6 +242,19 @@ input,textarea{font-family:inherit;outline:none;}
 .rules-section strong{color:var(--text);font-weight:700;}
 .rules-highlight{background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:10px 12px;margin:8px 0;font-size:12px;color:var(--text2);}
 
+/* ── MAP PAGE ────────────────────────────────────── */
+#page-map{padding:0;display:none;flex-direction:column;height:calc(100dvh - var(--header-h) - var(--nav-h));overflow:hidden;}
+#page-map.active{display:flex;}
+#course-map{flex:1;min-height:0;width:100%;}
+.leaflet-container{font-family:inherit;background:#111;}
+.leaflet-control-attribution{background:rgba(0,0,0,.55)!important;color:#666!important;font-size:9px!important;}
+.leaflet-control-attribution a{color:#888!important;}
+.leaflet-control-zoom a{background:var(--card)!important;color:var(--text)!important;border-color:var(--border)!important;}
+.player-map-pin{border-radius:50%;border:2.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);box-shadow:0 2px 8px rgba(0,0,0,.7);cursor:default;}
+.player-map-pin.me{border-color:#C9A84C;animation:map-pulse 2s ease-in-out infinite;}
+@keyframes map-pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.5);}50%{box-shadow:0 0 0 10px rgba(201,168,76,0);}}
+.course-pin-label{background:rgba(201,168,76,.92);border:1.5px solid rgba(0,0,0,.4);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:800;color:#000;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.6);}
+
 /* ── CHAT PAGE ───────────────────────────────────── */
 #page-chat{padding:0;display:none;flex-direction:column;}
 #page-chat.active{display:flex;}
@@ -261,6 +278,9 @@ input,textarea{font-family:inherit;outline:none;}
 .chat-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:10px 16px;color:var(--text);font-size:13px;}
 .chat-input::placeholder{color:var(--text3);}
 .chat-input:focus{border-color:var(--gold);}
+.chat-achievement{text-align:center;padding:2px 0;}
+.chat-achievement-bubble{display:inline-block;padding:10px 16px;background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(201,168,76,.06));border:1px solid rgba(201,168,76,.4);border-radius:14px;font-size:13px;font-weight:700;color:var(--gold);max-width:92%;line-height:1.45;text-align:left;}
+.chat-achievement-time{font-size:10px;color:var(--text3);margin-top:3px;}
 .chat-send{background:var(--gold);color:#000;border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .chat-empty{text-align:center;color:var(--text3);padding:40px 20px;font-size:13px;}
 
@@ -669,6 +689,18 @@ input,textarea{font-family:inherit;outline:none;}
       </div>
     </div>
 
+    <!-- COURSE MAP -->
+    <div class="page" id="page-map">
+      <div style="padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <div>
+          <div style="font-size:14px;font-weight:800;">🗺️ Course Map</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px;" id="map-status-text">Tap a course pin to see details</div>
+        </div>
+        <button id="loc-toggle-btn" class="btn btn-sm btn-ghost" onclick="toggleLocationSharing()" style="font-size:12px;">📍 Share Location</button>
+      </div>
+      <div id="course-map"></div>
+    </div>
+
   </div><!-- /content -->
 
   <!-- BOTTOM NAV -->
@@ -693,6 +725,9 @@ input,textarea{font-family:inherit;outline:none;}
     </div>
     <div class="nav-item" id="nav-chat" onclick="switchTab('chat')">
       <span class="nav-icon">💬<span class="nav-badge" id="badge-chat" style="display:none;">0</span></span><span class="nav-label">Chat</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('map')">
+      <span class="nav-icon">🗺️</span><span class="nav-label">Map</span>
     </div>
   </nav>
 
@@ -746,6 +781,42 @@ input,textarea{font-family:inherit;outline:none;}
     <div id="resolve-bet-content" style="margin-bottom:14px;"></div>
     <button class="btn btn-primary btn-full" onclick="confirmResolveBet()" style="background:var(--gold);color:#000;font-weight:800;">Settle Bet →</button>
     <button class="btn btn-ghost btn-full" onclick="closeModal('resolve-bet-modal')" style="margin-top:8px;">Cancel</button>
+  </div>
+</div>
+
+<!-- Sign Scorecard Modal -->
+<div class="modal-overlay" id="sign-scorecard-modal">
+  <div class="modal" style="max-height:92vh;">
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:28px;margin-bottom:6px;">✍️</div>
+      <div class="modal-title" style="margin-bottom:4px;">Sign Scorecard</div>
+      <div style="font-size:12px;color:var(--text2);">One player from each team must sign to finalize</div>
+    </div>
+
+    <!-- Michigan signer -->
+    <div style="margin-bottom:20px;padding:14px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--michigan-dark);">
+      <div class="sig-team-label" style="color:var(--michigan-light);">🟢 Team Michigan</div>
+      <select id="sig-select-m" class="modal-input" style="margin-bottom:10px;">
+        <option value="">— Select signing player —</option>
+      </select>
+      <canvas id="sig-canvas-m" class="sig-canvas" height="110"></canvas>
+      <button onclick="clearSigCanvas('m')" class="btn btn-ghost btn-sm" style="margin-top:7px;font-size:11px;color:var(--text3);">↺ Clear signature</button>
+    </div>
+
+    <!-- Superior signer -->
+    <div style="margin-bottom:20px;padding:14px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--superior-dark);">
+      <div class="sig-team-label" style="color:var(--superior-light);">🔵 Team Superior</div>
+      <select id="sig-select-s" class="modal-input" style="margin-bottom:10px;">
+        <option value="">— Select signing player —</option>
+      </select>
+      <canvas id="sig-canvas-s" class="sig-canvas" height="110"></canvas>
+      <button onclick="clearSigCanvas('s')" class="btn btn-ghost btn-sm" style="margin-top:7px;font-size:11px;color:var(--text3);">↺ Clear signature</button>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="submitSignedScorecard()" style="background:var(--gold);color:#000;font-weight:800;font-size:15px;padding:14px;margin-bottom:8px;">
+      ✅ Submit Signed Scorecard
+    </button>
+    <button class="btn btn-ghost btn-full" onclick="closeModal('sign-scorecard-modal')">Cancel</button>
   </div>
 </div>
 
@@ -843,7 +914,7 @@ input,textarea{font-family:inherit;outline:none;}
 const ROUNDS = [
   {
     id:'round1', name:'Round 1', course:'The Crown Golf Club',
-    date:'Thu Aug 27', format:'match_play', formatLabel:'2v2 Match Play',
+    date:'Thu Aug 27', format:'scramble', formatLabel:'2v2 Scramble',
     tee:'Blue', rating:'69.5', slope:'124',
     // Blue tee: Par 72. Par 3s: holes 3, 9, 12, 16
     par:    [5,  4,  3,  5,  4,  4,  4,  4,  3,   4,  4,  3,  4,  5,  4,  3,  5,  4],
@@ -1208,12 +1279,13 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   const navItems = document.querySelectorAll('.nav-item');
-  const idx = ['home','schedule','rosters','scorecards','leaderboard','rules','chat'].indexOf(tab);
+  const idx = ['home','schedule','rosters','scorecards','leaderboard','rules','chat','map'].indexOf(tab);
   if (idx > -1) navItems[idx].classList.add('active');
   if (tab === 'leaderboard') { renderLeaderboard(); leaderboardDirty = false; updateNavBadges(); }
   if (tab === 'rosters') renderRosters();
   if (tab === 'scorecards') renderRoundPicker();
   if (tab === 'chat') { renderChat(); setTimeout(()=>scrollChatBottom(), 100); unreadChatCount = 0; lastChatMessageCount = state.messages.length + (state.bets||[]).length; updateNavBadges(); }
+  if (tab === 'map') { renderCourseMap(); }
 }
 
 // ═══════════════════════════════════════════════════
@@ -1492,12 +1564,20 @@ function getMatchupSummary(matchup, round) {
 }
 
 function calcMatchPlayHoles(matchup, scores, round) {
+  const teamScore = isTeamScoreFormat(round);
   let mWins=0, sWins=0, halves=0;
   for (let h=1; h<=18; h++) {
     const hole = scores.holes?.[h];
     if (!hole) continue;
-    const mBest = bestScore(matchup.michigan||[], hole);
-    const sBest = bestScore(matchup.superior||[], hole);
+    let mBest, sBest;
+    if (teamScore) {
+      const mv = hole['team_michigan'], sv = hole['team_superior'];
+      mBest = (mv !== undefined && mv !== null && mv !== '') ? Number(mv) : null;
+      sBest = (sv !== undefined && sv !== null && sv !== '') ? Number(sv) : null;
+    } else {
+      mBest = bestScore(matchup.michigan||[], hole);
+      sBest = bestScore(matchup.superior||[], hole);
+    }
     if (mBest===null||sBest===null) continue;
     if (mBest < sBest) mWins++;
     else if (sBest < mBest) sWins++;
@@ -1553,13 +1633,28 @@ function openScorecard(roundId, matchupId) {
 }
 
 // ─── helpers shared by both scorecard views ───────────────────────────────
-function isMatchComplete(matchup, scores) {
-  // A match is complete when every player has a score on every hole
+
+// Formats where the whole team shares one score per hole (no individual entries)
+function isTeamScoreFormat(round) {
+  return round && (round.format === 'scramble' || round.format === 'alt_shot');
+}
+
+function isMatchComplete(matchup, scores, round) {
+  if (isTeamScoreFormat(round)) {
+    // Team-score formats: need one score per team per hole
+    for (let h=1; h<=18; h++) {
+      const hole = scores.holes?.[h]||{};
+      if (hole['team_michigan'] === undefined || hole['team_michigan'] === null || hole['team_michigan'] === '') return false;
+      if (hole['team_superior'] === undefined || hole['team_superior'] === null || hole['team_superior'] === '') return false;
+    }
+    return true;
+  }
+  // Individual formats: every player must have a score on every hole
   const allIds = [...(matchup.michigan||[]),...(matchup.superior||[])];
   if (!allIds.length) return false;
   for (let h=1; h<=18; h++) {
     const hole = scores.holes?.[h]||{};
-    if (allIds.some(id => !hole[id] && hole[id]!==0)) return false;
+    if (allIds.some(id => hole[id] === undefined || hole[id] === null || hole[id] === '')) return false;
   }
   return true;
 }
@@ -1575,6 +1670,129 @@ function endMatch(matchupId) {
   if (round && matchup) renderScorecardView(round, matchup);
 }
 
+// ─── SCORECARD SIGNING ────────────────────────────────────────────────────
+
+function findMatchupById(matchupId) {
+  for (const roundId of Object.keys(state.matchups||{})) {
+    const m = (state.matchups[roundId]||{})[matchupId];
+    if (m) return { matchup: m, roundId };
+  }
+  return null;
+}
+
+function showSignScorecardModal(matchupId) {
+  signingMatchupId = matchupId;
+  sigHasDrawn = { m: false, s: false };
+
+  const found = findMatchupById(matchupId);
+  if (!found) return;
+  const { matchup } = found;
+
+  const mPlayers = (matchup.michigan||[]).map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+  const sPlayers = (matchup.superior||[]).map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+
+  document.getElementById('sig-select-m').innerHTML =
+    '<option value="">— Select signing player —</option>' +
+    mPlayers.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('sig-select-s').innerHTML =
+    '<option value="">— Select signing player —</option>' +
+    sPlayers.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+
+  showModal('sign-scorecard-modal');
+  // Wait for layout so canvas offsetWidth is set
+  setTimeout(() => { initSigCanvas('m'); initSigCanvas('s'); }, 60);
+}
+
+function initSigCanvas(team) {
+  const oldCanvas = document.getElementById(`sig-canvas-${team}`);
+  if (!oldCanvas) return;
+  // Clone to remove stale event listeners
+  const canvas = oldCanvas.cloneNode(false);
+  oldCanvas.parentNode.replaceChild(canvas, oldCanvas);
+
+  canvas.width = canvas.offsetWidth || 300;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - rect.left) * (canvas.width / rect.width),
+             y: (src.clientY - rect.top)  * (canvas.height / rect.height) };
+  }
+  function startDraw(e) {
+    e.preventDefault();
+    drawing = true;
+    const {x,y} = getPos(e);
+    lastX = x; lastY = y;
+    ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI*2);
+    ctx.fillStyle='#fff'; ctx.fill();
+  }
+  function draw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const {x,y} = getPos(e);
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+    lastX = x; lastY = y;
+    sigHasDrawn[team] = true;
+    canvas.classList.add('has-sig');
+  }
+  function endDraw() { drawing = false; }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', endDraw);
+}
+
+function clearSigCanvas(team) {
+  const canvas = document.getElementById(`sig-canvas-${team}`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  sigHasDrawn[team] = false;
+  canvas.classList.remove('has-sig');
+}
+
+function submitSignedScorecard() {
+  const mSel = document.getElementById('sig-select-m');
+  const sSel = document.getElementById('sig-select-s');
+  if (!mSel.value)      { showToast('⚠️ Select a Michigan player'); return; }
+  if (!sSel.value)      { showToast('⚠️ Select a Superior player'); return; }
+  if (!sigHasDrawn.m)   { showToast('⚠️ Michigan signature required'); return; }
+  if (!sigHasDrawn.s)   { showToast('⚠️ Superior signature required'); return; }
+
+  const mPlayer = state.players.find(p=>p.id===mSel.value);
+  const sPlayer = state.players.find(p=>p.id===sSel.value);
+
+  state.completedMatches[signingMatchupId] = {
+    finalized: true,
+    signedAt: Date.now(),
+    michigan: { playerId: mPlayer.id, playerName: mPlayer.name },
+    superior: { playerId: sPlayer.id, playerName: sPlayer.name }
+  };
+  save('completedMatches', state.completedMatches);
+  closeModal('sign-scorecard-modal');
+  renderLeaderboard();
+  showToast('✅ Scorecard signed & finalized!');
+
+  // Re-render scorecard to show signed banner
+  const found = findMatchupById(signingMatchupId);
+  if (found) {
+    const round = ROUNDS.find(r=>r.id===found.roundId);
+    if (round) renderScorecardView(round, found.matchup);
+  }
+}
+
 function toggleScorecardView() {
   scorecardViewMode = scorecardViewMode === 'hole' ? 'table' : 'hole';
   const round = ROUNDS.find(r=>r.id===currentRoundId);
@@ -1583,10 +1801,62 @@ function toggleScorecardView() {
 }
 
 function navigateHole(dir) {
-  currentScorecardHole = Math.max(1, Math.min(18, currentScorecardHole + dir));
+  const fromHole = currentScorecardHole;
   const round = ROUNDS.find(r=>r.id===currentRoundId);
   const matchup = state.matchups[currentRoundId]?.[currentMatchupId];
+
+  // Check achievements when moving FORWARD (on click, not on input)
+  if (dir === 1 && round && matchup) {
+    checkHoleAchievements(fromHole, round, matchup);
+  }
+
+  // On the last hole, going forward → switch to full scorecard view
+  if (fromHole === 18 && dir === 1) {
+    scorecardViewMode = 'table';
+    if (round && matchup) renderScorecardView(round, matchup);
+    return;
+  }
+
+  currentScorecardHole = Math.max(1, Math.min(18, currentScorecardHole + dir));
   if (round && matchup) renderHoleCard(round, matchup);
+}
+
+function checkHoleAchievements(hole, round, matchup) {
+  if (!appInitialized) return;
+  const scores = state.scores[matchup.id] || { holes: {} };
+  const holeData = scores.holes?.[hole] || {};
+  const par = round.par[hole - 1];
+  if (!par) return;
+
+  const playerIds = isTeamScoreFormat(round)
+    ? ['team_michigan', 'team_superior']
+    : [...(matchup.michigan||[]), ...(matchup.superior||[])];
+
+  // Birdie / eagle / hole-in-one
+  for (const pid of playerIds) {
+    const val = holeData[pid];
+    if (val === undefined || val === null || val === '') continue;
+    const numVal = Number(val);
+    if (isNaN(numVal) || numVal < 1 || numVal > par - 1) continue;
+    const key = `${matchup.id}_${hole}_${pid}_${numVal}`;
+    if (!announcedAchievements.has(key)) {
+      announcedAchievements.add(key);
+      postAchievementMessage(matchup.id, hole, pid, numVal, par, round);
+    }
+  }
+
+  // CTP — only on par-3 holes
+  if (par === 3) {
+    const ctpKey = round.id + '_hole' + hole;
+    const winner = state.ctp[ctpKey];
+    if (winner?.playerId && winner?.distance) {
+      const key = `ctp_${round.id}_${hole}_${winner.playerId}_${winner.distance}`;
+      if (!announcedAchievements.has(key)) {
+        announcedAchievements.add(key);
+        postCtpMessage(round.id, hole, winner.playerId, winner.distance);
+      }
+    }
+  }
 }
 
 function renderHoleCard(round, matchup) {
@@ -1597,13 +1867,13 @@ function renderHoleCard(round, matchup) {
   const scores  = state.scores[matchup.id] || {holes:{}};
   const holeData= scores.holes?.[h] || {};
   const isStableford = round.format === 'stableford';
-  const isAltShot    = round.format === 'alt_shot';
+  const isTeamScore  = isTeamScoreFormat(round);
   const TEE_COLOR_MAP = {Blue:'#4a9ede',White:'#e8e8e8',Red:'#cc3333',Gold:'#c9a84c',Green:'#2a7a3b'};
   const teeColor = TEE_COLOR_MAP[round.tee] || '#888';
 
   const mPlayers = (matchup.michigan||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'michigan'}));
   const sPlayers = (matchup.superior||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'superior'}));
-  const playerColumns = isAltShot
+  const playerColumns = isTeamScore
     ? [{id:'team_michigan',name:'Michigan',team:'michigan'},{id:'team_superior',name:'Superior',team:'superior'}]
     : [...mPlayers,...sPlayers];
 
@@ -1706,9 +1976,14 @@ function renderHoleCard(round, matchup) {
       <div style="font-size:14px;font-weight:700;">${statusText}</div>
     </div>
     <!-- Prev / Next -->
-    <div style="display:flex;gap:10px;margin-bottom:8px;">
-      <button class="btn btn-ghost" style="flex:1;font-size:15px;" onclick="navigateHole(-1)" ${h===1?'disabled':''}>← Hole ${h>1?h-1:1}</button>
-      <button class="btn btn-ghost" style="flex:1;font-size:15px;" onclick="navigateHole(1)" ${h===18?'disabled':''}>Hole ${h<18?h+1:18} →</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button class="btn btn-ghost" style="padding:10px 16px;font-size:14px;flex-shrink:0;"
+        onclick="navigateHole(-1)" ${h===1?'disabled':''}>← ${h>1?h-1:1}</button>
+      <button class="btn" style="flex:1;font-size:15px;font-weight:800;padding:14px;
+        background:${h<18?'var(--gold)':'#2A9A54'};color:${h<18?'#000':'#fff'};"
+        onclick="navigateHole(1)">
+        ${h<18?`Next Hole ${h+1} →`:'✓ Finish Hole 18'}
+      </button>
     </div>`;
 }
 
@@ -1720,10 +1995,10 @@ function renderScorecardView(round, matchup) {
 
   const isStableford = round.format === 'stableford';
   const isSingles = round.format === 'singles_match';
-  const isAltShot = round.format === 'alt_shot';
+  const isTeamScore = isTeamScoreFormat(round);
 
-  // For alt shot, just 2 team scores per hole
-  const playerColumns = isAltShot
+  // Team-score formats (scramble / alt-shot): one score per team per hole
+  const playerColumns = isTeamScore
     ? [{id:'team_michigan',name:'Michigan',team:'michigan'},{id:'team_superior',name:'Superior',team:'superior'}]
     : allPlayers.map(p=>({
         ...p,
@@ -1738,7 +2013,7 @@ function renderScorecardView(round, matchup) {
     <th style="min-width:28px;">Par</th>
     <th style="min-width:36px;color:${teeColor};">${round.tee||'Yd'}</th>
     ${playerColumns.map(p=>`<th style="color:${p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)'};min-width:50px;">${shortName(p.name)}</th>`).join('')}
-    ${!isStableford&&!isAltShot?'<th style="min-width:50px;">Result</th>':''}
+    ${!isStableford&&!isTeamScore?'<th style="min-width:50px;">Result</th>':''}
     ${isStableford?'<th style="min-width:40px;">Pts</th>':''}
   </tr>`;
 
@@ -1754,7 +2029,7 @@ function renderScorecardView(round, matchup) {
     let resultCell = '';
     let rowStyle = '';
 
-    if (!isStableford && !isAltShot) {
+    if (!isStableford && !isTeamScore) {
       const mBest = bestScore(matchup.michigan||[], holeData);
       const sBest = bestScore(matchup.superior||[], holeData);
       if (mBest!==null && sBest!==null) {
@@ -1775,7 +2050,7 @@ function renderScorecardView(round, matchup) {
           for(let i=1;i<=9;i++){const v=Number((scores.holes?.[i]||{})[p.id]);if(!isNaN(v)&&v>0)out+=v;}
           return `<td style="font-size:11px;font-weight:700;color:var(--text2);">${out||''}</td>`;
         }).join('')}
-        ${!isStableford&&!isAltShot?`<td style="font-size:10px;color:var(--text2);">${mWins>sWins?`M${mWins-sWins}UP`:sWins>mWins?`S${sWins-mWins}UP`:'AS'}</td>`:''}
+        ${!isStableford&&!isTeamScore?`<td style="font-size:10px;color:var(--text2);">${mWins>sWins?`M${mWins-sWins}UP`:sWins>mWins?`S${sWins-mWins}UP`:'AS'}</td>`:''}
         ${isStableford?'<td></td>':''}
       </tr>`;
     }
@@ -1808,7 +2083,7 @@ function renderScorecardView(round, matchup) {
           oninput="setScore('${matchup.id}','${h}','${p.id}',this.value)"
           onchange="updateScoreStyle(this,${par})"></td>`;
       }).join('')}
-      ${!isStableford&&!isAltShot?`<td>${resultCell}</td>`:''}
+      ${!isStableford&&!isTeamScore?`<td>${resultCell}</td>`:''}
       ${isStableford?ptsCell:''}
     </tr>`;
   }
@@ -1827,12 +2102,13 @@ function renderScorecardView(round, matchup) {
       for(let i=1;i<=18;i++){const v=Number((scores.holes?.[i]||{})[p.id]);if(!isNaN(v)&&v>0)tot+=v;}
       return `<td style="font-size:12px;font-weight:800;color:var(--gold);">${tot||''}</td>`;
     }).join('')}
-    ${!isStableford&&!isAltShot?`<td style="font-size:11px;font-weight:800;">${matchResultCell}</td>`:''}
+    ${!isStableford&&!isTeamScore?`<td style="font-size:11px;font-weight:800;">${matchResultCell}</td>`:''}
     ${isStableford?'<td></td>':''}
   </tr>`;
 
-  const complete = isMatchComplete(matchup, scores);
+  const complete = isMatchComplete(matchup, scores, round);
   const alreadyFinalized = state.completedMatches[matchup.id];
+  const sigData = alreadyFinalized && typeof alreadyFinalized === 'object' ? alreadyFinalized : null;
 
   document.getElementById('sc-card-view').innerHTML = `
     <button class="back-btn" onclick="openRound('${round.id}')">← Matchups</button>
@@ -1849,7 +2125,7 @@ function renderScorecardView(round, matchup) {
         &nbsp;|&nbsp;
         <span style="color:var(--superior-light)">Superior:</span> ${sPlayers.map(p=>p.name).join(', ')||'TBD'}
       </div>
-      ${alreadyFinalized?`<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--gold);">✓ Match Finalized</div>`:''}
+      ${alreadyFinalized?`<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--gold);">${sigData?`✍️ Signed: ${sigData.michigan.playerName} &amp; ${sigData.superior.playerName}`:'✓ Match Finalized'}</div>`:''}
     </div>
 
     <!-- View toggle -->
@@ -1883,12 +2159,12 @@ function renderScorecardView(round, matchup) {
       </div>
     </div>
 
-    <!-- End Match button -->
+    <!-- Sign Scorecard button -->
     ${complete && !alreadyFinalized ? `
     <div style="margin-top:16px;">
       <button class="btn" style="width:100%;background:var(--gold);color:#000;font-weight:800;font-size:15px;padding:14px;"
-        onclick="endMatch('${matchup.id}')">
-        🏁 End Match — Finalize Result
+        onclick="showSignScorecardModal('${matchup.id}')">
+        ✍️ Sign Scorecard
       </button>
     </div>` : ''}`;
 
@@ -1989,12 +2265,328 @@ function setCtp(roundId, hole, playerId, distance) {
   showToast('CTP saved');
 }
 
+// ─── ACHIEVEMENT ANNOUNCEMENTS ─────────────────────────────────────────────
+
+function postAchievementMessage(matchupId, hole, playerId, score, par, round) {
+  const diff = score - par;
+
+  // Resolve name + team — handle both individual and team-score player IDs
+  let shortName, teamName;
+  if (playerId === 'team_michigan') {
+    shortName = 'Michigan'; teamName = 'Michigan';
+  } else if (playerId === 'team_superior') {
+    shortName = 'Lake Superior'; teamName = 'Lake Superior';
+  } else {
+    const player = state.players[playerId];
+    if (!player) return;
+    const parts = player.name.trim().split(' ');
+    shortName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    teamName = player.team === 'michigan' ? 'Michigan' : 'Lake Superior';
+  }
+
+  // Match standing after this score
+  let standingText = '';
+  const matchup = findMatchupById(matchupId)?.matchup;
+  if (matchup) {
+    const summary = getMatchupSummary(matchup, round);
+    if (summary && summary !== 'Tap to enter scores') {
+      standingText = ` — ${summary}`;
+    }
+  }
+
+  let text;
+  const h = Number(hole);
+
+  // Hole-in-one (score = 1, any par)
+  if (score === 1) {
+    text = `⛳🎯 HOLE IN ONE!!! ${shortName} ACES the par-${par} ${h}th! ${teamName} just made HISTORY${standingText}! 🎉🎉🎉`;
+  } else if (diff <= -3) {
+    // Albatross / double-eagle
+    const albTemplates = [
+      `🦅🦅🦅 ALBATROSS!!! ${shortName} cards a ${score} on the par-${par} ${h}th — THREE under! ${teamName} absolutely scorching${standingText}!!!`,
+    ];
+    text = albTemplates[0];
+  } else if (diff === -2) {
+    // Eagle
+    const eagleTemplates = [
+      `🦅 EAGLE!! ${shortName} fires a ${score} on the par-${par} ${h}th! ${teamName} on fire${standingText}!`,
+      `🦅🦅 ${shortName} makes EAGLE on hole ${h}! Two under par — ${teamName} rolling${standingText}!`,
+      `🦅 EAGLE ALERT — ${shortName} drains a ${score} on ${h}. ${teamName} taking over${standingText}!`,
+    ];
+    text = eagleTemplates[Math.floor(Math.random() * eagleTemplates.length)];
+  } else {
+    // Birdie (diff === -1)
+    const birdieTemplates = [
+      `🐦 BIRDIE! ${shortName} with a ${score} on the par-${par} ${h}th${standingText}!`,
+      `🐦 ${shortName} goes birdie on hole ${h}. ${teamName}${standingText}.`,
+      `🐦 Nice one! ${shortName} birdies ${h} — one under par${standingText}.`,
+      `🐦 ${shortName} finds the bottom of the cup on ${h}${standingText}!`,
+    ];
+    text = birdieTemplates[Math.floor(Math.random() * birdieTemplates.length)];
+  }
+
+  pushSystemMessage(text, 'achievement');
+}
+
+function postCtpMessage(roundId, hole, playerId, distance) {
+  const player = state.players[playerId];
+  if (!player) return;
+  const parts = player.name.trim().split(' ');
+  const shortName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+  const teamName = player.team === 'michigan' ? 'Michigan' : 'Lake Superior';
+
+  const templates = [
+    `📍 NEW CTP! ${shortName} sticks it to ${distance}' on hole ${hole}! ${teamName} going for the pin!`,
+    `📍 ${shortName} pins it to ${distance} feet on the par-3 ${hole}th — new closest to the pin!`,
+    `📍 Closest to the Pin update: ${shortName} (${teamName}) leads at ${distance}' on hole ${hole}!`,
+  ];
+  const text = templates[Math.floor(Math.random() * templates.length)];
+  pushSystemMessage(text, 'achievement');
+}
+
+function pushSystemMessage(text, type) {
+  const msg = {
+    id: 'sys_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    userId: 'system',
+    userName: 'GLI Live',
+    text,
+    type: type || 'system',
+    ts: Date.now()
+  };
+  state.messages.push(msg);
+  save('messages', state.messages);
+  if (currentTab === 'chat') {
+    renderChat();
+    setTimeout(() => scrollChatBottom(), 100);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// COURSE MAP
+// ═══════════════════════════════════════════════════
+
+// Approximate course center coordinates (northern Michigan)
+const COURSE_LOCATIONS = {
+  round1: { lat: 44.7680, lng: -85.5900, zoom: 15, label: 'R1 — Crown' },
+  round2: { lat: 44.8567, lng: -85.8581, zoom: 15, label: 'R2 — Sugar Loaf' },
+  round3: { lat: 44.7000, lng: -86.0800, zoom: 15, label: 'R3 — Manitou' },
+  round4: { lat: 44.7840, lng: -85.5280, zoom: 15, label: 'R4 — GT Resort' },
+};
+
+let leafletMap = null;
+let playerMarkers = {};   // userId -> L.Marker
+let mapLocationWatchId = null;
+let sharingLocation = false;
+let locationFirebaseRef = null;
+
+function loadLeaflet(cb) {
+  if (window.L) { cb(); return; }
+  const css = document.createElement('link');
+  css.rel = 'stylesheet';
+  css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(css);
+  const js = document.createElement('script');
+  js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  js.onload = cb;
+  document.head.appendChild(js);
+}
+
+function renderCourseMap() {
+  if (!window.L) {
+    document.getElementById('map-status-text').textContent = 'Loading map…';
+    loadLeaflet(() => setTimeout(() => initCourseMap(), 50));
+    return;
+  }
+  if (!leafletMap) {
+    setTimeout(() => initCourseMap(), 50);
+  } else {
+    setTimeout(() => {
+      leafletMap.invalidateSize();
+      panToMyLocation();
+    }, 80);
+  }
+}
+
+function initCourseMap() {
+  const el = document.getElementById('course-map');
+  if (!el || leafletMap) { if (leafletMap) setTimeout(()=>leafletMap.invalidateSize(),80); return; }
+
+  // Default view: center on all four courses
+  leafletMap = L.map('course-map', { zoomControl: true, attributionControl: true })
+    .setView([44.77, -85.73], 11);
+
+  // Dark tile layer (CartoDB DarkMatter)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(leafletMap);
+
+  // Pin each course
+  ROUNDS.forEach(round => {
+    const coords = COURSE_LOCATIONS[round.id];
+    if (!coords) return;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="course-pin-label">${coords.label}</div>`,
+      iconAnchor: [0, 10]
+    });
+    L.marker([coords.lat, coords.lng], { icon })
+      .addTo(leafletMap)
+      .bindPopup(`<b>${round.name}</b><br>${round.course}<br><span style="color:#aaa">${round.date} · ${round.formatLabel}</span>`);
+  });
+
+  // Force Leaflet to measure its container after layout settles
+  setTimeout(() => {
+    leafletMap.invalidateSize();
+    panToMyLocation();
+  }, 150);
+
+  // Start Firebase location listener
+  startMapLocationListener();
+  updateLocationToggleBtn();
+  document.getElementById('map-status-text').textContent = 'Tap a course pin to see details';
+}
+
+function panToMyLocation() {
+  if (!leafletMap || !currentUser || !firebaseDb) return;
+  firebaseDb.ref(`gli26/locations/${currentUser.id}`).once('value', snap => {
+    const loc = snap.val();
+    if (loc && loc.lat && loc.lng) {
+      leafletMap.setView([loc.lat, loc.lng], 16);
+    }
+  });
+}
+
+function startMapLocationListener() {
+  if (!firebaseDb) return;
+  firebaseDb.ref('gli26/locations').on('value', snap => {
+    const locs = snap.val() || {};
+    updatePlayerMapMarkers(locs);
+  });
+}
+
+function updatePlayerMapMarkers(locs) {
+  if (!leafletMap) return;
+  const now = Date.now();
+  const STALE_MS = 60 * 60 * 1000; // 1 hour
+
+  // Remove markers for users no longer in data or gone stale
+  Object.keys(playerMarkers).forEach(uid => {
+    if (!locs[uid] || now - locs[uid].ts > STALE_MS) {
+      leafletMap.removeLayer(playerMarkers[uid]);
+      delete playerMarkers[uid];
+    }
+  });
+
+  // Add/update markers
+  Object.entries(locs).forEach(([uid, loc]) => {
+    if (now - loc.ts > STALE_MS) return;
+    const isMe = currentUser && uid === currentUser.id;
+    const teamColor = loc.team === 'michigan' ? '#2A9A54' : loc.team === 'superior' ? '#2866C4' : '#888';
+    const initials = (loc.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const size = isMe ? 36 : 30;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="player-map-pin${isMe?' me':''}" style="width:${size}px;height:${size}px;background:${isMe?'var(--gold, #C9A84C)':teamColor};">
+        ${loc.photoUrl ? `<img src="${loc.photoUrl}" style="width:${size-6}px;height:${size-6}px;border-radius:50%;object-fit:cover;">` : initials}
+      </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2]
+    });
+
+    if (playerMarkers[uid]) {
+      playerMarkers[uid].setLatLng([loc.lat, loc.lng]);
+      playerMarkers[uid].setIcon(icon);
+    } else {
+      playerMarkers[uid] = L.marker([loc.lat, loc.lng], { icon })
+        .addTo(leafletMap)
+        .bindPopup(`<b>${loc.name}</b><br><span style="color:${teamColor}">${loc.team==='michigan'?'Team Michigan':'Lake Superior'}</span>`);
+    }
+  });
+}
+
+function toggleLocationSharing() {
+  if (!currentUser) { showToast('Sign in to share your location'); return; }
+  if (sharingLocation) {
+    stopLocationSharing();
+  } else {
+    startLocationSharing();
+  }
+}
+
+function startLocationSharing() {
+  if (!navigator.geolocation) { showToast('⚠️ Geolocation not supported'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      sharingLocation = true;
+      updateLocationToggleBtn();
+      pushMyLocation(pos);
+      // Watch for updates
+      mapLocationWatchId = navigator.geolocation.watchPosition(
+        pushMyLocation,
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+      );
+      showToast('📍 Sharing location with the group');
+    },
+    err => {
+      if (err.code === 1) showToast('📍 Location permission denied');
+      else showToast('⚠️ Could not get location');
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function pushMyLocation(pos) {
+  if (!currentUser || !firebaseDb) return;
+  const player = state.players[currentUser.id];
+  firebaseDb.ref(`gli26/locations/${currentUser.id}`).set({
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    name: currentUser.name,
+    team: currentUser.team || 'unassigned',
+    photoUrl: player?.photoUrl || null,
+    ts: Date.now()
+  });
+  // Pan/zoom map to my location
+  if (leafletMap) {
+    leafletMap.setView([pos.coords.latitude, pos.coords.longitude], Math.max(leafletMap.getZoom(), 15));
+  }
+}
+
+function stopLocationSharing() {
+  if (mapLocationWatchId !== null) {
+    navigator.geolocation.clearWatch(mapLocationWatchId);
+    mapLocationWatchId = null;
+  }
+  if (currentUser && firebaseDb) {
+    firebaseDb.ref(`gli26/locations/${currentUser.id}`).remove();
+  }
+  sharingLocation = false;
+  updateLocationToggleBtn();
+  showToast('📍 Location sharing off');
+}
+
+function updateLocationToggleBtn() {
+  const btn = document.getElementById('loc-toggle-btn');
+  if (!btn) return;
+  if (sharingLocation) {
+    btn.textContent = '🔴 Stop Sharing';
+    btn.style.color = '#e53935';
+    btn.style.borderColor = '#e53935';
+  } else {
+    btn.textContent = '📍 Share Location';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
 // Matchup creation
 function showCreateMatchup() {
   const round = ROUNDS.find(r=>r.id===currentRoundId);
   editingMatchupRoundId = currentRoundId;
   const isSingles = round.format === 'singles_match';
-  const isAltShot = round.format === 'alt_shot';
   const isStableford = round.format === 'stableford';
 
   const mPlayers = Object.values(state.players).filter(p=>p.team==='michigan');
@@ -2360,8 +2952,19 @@ function renderChat() {
   container.innerHTML = items.map(item => {
     if (item._type === 'bet') return renderBetCard(item);
     const msg = item;
-    const mine = currentUser && msg.userId === currentUser.id;
     const time = new Date(msg.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+    // ── Achievement / system announcements ──
+    if (msg.type === 'achievement') {
+      const delBtn = isAdmin() ? `<button onclick="deleteMessage('${msg.id}')" style="background:none;border:none;color:rgba(201,168,76,.4);font-size:10px;cursor:pointer;padding:0 4px;flex-shrink:0;" title="Delete">✕</button>` : '';
+      return `
+      <div class="chat-achievement">
+        <div class="chat-achievement-bubble">${escHtml(msg.text)}${delBtn}</div>
+        <div class="chat-achievement-time">${time}</div>
+      </div>`;
+    }
+
+    const mine = currentUser && msg.userId === currentUser.id;
     const canDelete = isAdmin() || (mine && msg.userId !== 'system');
     const deleteBtn = canDelete ? `<button onclick="deleteMessage('${msg.id}')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:1px 5px;opacity:.45;line-height:1;flex-shrink:0;" title="Delete">✕</button>` : '';
     return `
@@ -2507,6 +3110,10 @@ function deleteBet(betId) {
 }
 
 let resolveBetId = null;
+let signingMatchupId = null;
+let sigHasDrawn = { m: false, s: false };
+const announcedAchievements = new Set(); // prevents duplicate chat posts this session
+const achievementTimers = {};            // debounce timers keyed by matchupId_hole_playerId
 
 function showResolveBetModal(betId) {
   const bet = state.bets.find(b => b.id === betId);
@@ -2775,6 +3382,7 @@ function checkLoginStatus() {
 }
 
 function logout() {
+  if (sharingLocation) stopLocationSharing(); // clear Firebase location entry
   localStorage.removeItem('gli26_loggedInAs');
   localStorage.removeItem('gli26_appRole');
   localStorage.removeItem('gli26_currentUser');

@@ -101,25 +101,29 @@ input,textarea{font-family:inherit;outline:none;}
 .btn-sm{padding:6px 12px;font-size:11px;}
 .btn-full{width:100%;}
 
-/* ── HOME PAGE ───────────────────────────────────── */
-.home-hero{background:linear-gradient(135deg,#111 0%,#1a1a1a 100%);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden;}
-.home-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(26,107,58,.15) 0%,transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(26,74,140,.15) 0%,transparent 60%);pointer-events:none;}
-.home-hero-gl{font-size:48px;font-weight:900;color:var(--gold);letter-spacing:-3px;line-height:1;margin-bottom:4px;}
-.home-hero-name{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
-.home-hero-dates{font-size:11px;color:var(--text2);letter-spacing:1px;}
-.scoreboard-row{display:grid;grid-template-columns:1fr 60px 1fr;gap:8px;margin-bottom:10px;}
-.sb-team{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;text-align:center;}
-.sb-team.michigan{border-color:var(--michigan);}
-.sb-team.superior{border-color:var(--superior);}
-.sb-team-score{font-size:40px;font-weight:900;line-height:1;}
-.sb-team.michigan .sb-team-score{color:var(--michigan-light);}
-.sb-team.superior .sb-team-score{color:var(--superior-light);}
-.sb-team-name{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-top:4px;}
-.sb-vs{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);font-weight:700;}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;}
-.stat-val{font-size:20px;font-weight:800;color:var(--gold);}
-.stat-lbl{font-size:10px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+/* ── HOME PAGE (LAUNCHER) ────────────────────────── */
+#page-home{padding:0;}
+.home-launcher-hero{text-align:center;padding:28px 20px 16px;background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,.08) 0%,transparent 70%);}
+.home-launcher-logo{width:96px;height:96px;border-radius:20px;box-shadow:0 0 40px rgba(201,168,76,.3);margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;}
+.home-launcher-title{font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text);margin-bottom:5px;}
+.home-launcher-sub{font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.home-launcher-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 14px 10px;}
+.home-tile{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px 12px 18px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s;}
+.home-tile:active{border-color:var(--gold);background:var(--bg3);}
+.home-tile-circle{width:60px;height:60px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(201,168,76,.07);}
+.home-tile-label{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+.home-scores-strip{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:8px;padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 0;}
+.home-score-chip{text-align:center;}
+.home-score-num{font-size:28px;font-weight:900;line-height:1;}
+.home-score-chip.michigan .home-score-num{color:var(--michigan-light);}
+.home-score-chip.superior .home-score-num{color:var(--superior-light);}
+.home-score-lbl{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-top:2px;}
+.home-score-vs{text-align:center;font-size:11px;font-weight:800;color:var(--text3);}
+.home-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border);}
+.home-stat{display:flex;flex-direction:column;align-items:center;padding:12px 4px;border-right:1px solid var(--border);}
+.home-stat:last-child{border-right:none;}
+.home-stat-val{font-size:16px;font-weight:800;color:var(--gold);}
+.home-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
 
 /* ── SCHEDULE PAGE ───────────────────────────────── */
 .day-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
@@ -485,43 +489,66 @@ input,textarea{font-family:inherit;outline:none;}
 
     <!-- HOME -->
     <div class="page active" id="page-home">
-      <div class="home-hero">
-        <div class="home-hero-gl">GL</div>
-        <div class="home-hero-name">Great Lakes Invitational</div>
-        <div class="home-hero-dates">⛳ August 26–30, 2026</div>
+      <!-- Hero -->
+      <div class="home-launcher-hero">
+        <img src="gli-logo.png" class="home-launcher-logo" alt="GLI">
+        <div class="home-launcher-title">Great Lakes Invitational</div>
+        <div class="home-launcher-sub">2026 · AUG 26–30</div>
       </div>
-      <div class="scoreboard-row">
-        <div class="sb-team michigan">
-          <div class="sb-team-score" id="home-m-pts">0</div>
-          <div class="sb-team-name">Team Michigan</div>
+      <!-- Nav grid -->
+      <div class="home-launcher-grid">
+        <div class="home-tile" onclick="switchTab('home')">
+          <div class="home-tile-circle">🏠</div>
+          <div class="home-tile-label">Home</div>
         </div>
-        <div class="sb-vs">VS</div>
-        <div class="sb-team superior">
-          <div class="sb-team-score" id="home-s-pts">0</div>
-          <div class="sb-team-name">Team Superior</div>
+        <div class="home-tile" onclick="switchTab('schedule')">
+          <div class="home-tile-circle">📅</div>
+          <div class="home-tile-label">Schedule</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('rosters')">
+          <div class="home-tile-circle">👥</div>
+          <div class="home-tile-label">Rosters</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('scorecards')">
+          <div class="home-tile-circle">⛳</div>
+          <div class="home-tile-label">Cards</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('leaderboard')">
+          <div class="home-tile-circle">🏆</div>
+          <div class="home-tile-label">Board</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('rules')">
+          <div class="home-tile-circle">📋</div>
+          <div class="home-tile-label">Rules</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('chat')">
+          <div class="home-tile-circle">💬</div>
+          <div class="home-tile-label">Chat</div>
+        </div>
+        <div class="home-tile" onclick="switchTab('map')">
+          <div class="home-tile-circle">🗺️</div>
+          <div class="home-tile-label">Map</div>
         </div>
       </div>
-
-      <div class="section-title">Tournament Stats</div>
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-val" id="stat-players">0</div>
-          <div class="stat-lbl">Players Registered</div>
+      <!-- Scores strip -->
+      <div class="home-scores-strip">
+        <div class="home-score-chip michigan">
+          <div class="home-score-num" id="home-m-pts">0</div>
+          <div class="home-score-lbl">Team Michigan</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-val">4</div>
-          <div class="stat-lbl">Rounds</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="stat-mvp">—</div>
-          <div class="stat-lbl">MVP Leader</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">4</div>
-          <div class="stat-lbl">Courses</div>
+        <div class="home-score-vs">VS</div>
+        <div class="home-score-chip superior">
+          <div class="home-score-num" id="home-s-pts">0</div>
+          <div class="home-score-lbl">Team Superior</div>
         </div>
       </div>
-
+      <!-- Quick stats -->
+      <div class="home-stats-row">
+        <div class="home-stat"><span class="home-stat-val" id="stat-players">0</span><span class="home-stat-lbl">Players</span></div>
+        <div class="home-stat"><span class="home-stat-val">4</span><span class="home-stat-lbl">Rounds</span></div>
+        <div class="home-stat"><span class="home-stat-val" id="stat-mvp">—</span><span class="home-stat-lbl">MVP</span></div>
+        <div class="home-stat"><span class="home-stat-val">4</span><span class="home-stat-lbl">Courses</span></div>
+      </div>
     </div>
 
     <!-- SCHEDULE -->
@@ -738,15 +765,15 @@ input,textarea{font-family:inherit;outline:none;}
     </div>
 
     <!-- CADDY AI BUTTON -->
-    <button id="caddy-btn" onclick="toggleCaddy()" title="Ask the Caddy"><img src="caddy-icon.png" alt="Caddy"></button>
+    <button id="caddy-btn" onclick="toggleCaddy()" title="Ask Chubbs"><img src="caddy-icon.png" alt="Caddy"></button>
 
     <!-- CADDY AI PANEL -->
     <div id="caddy-panel">
       <div id="caddy-header">
         <div id="caddy-avatar"><img src="caddy-icon.png" alt="Caddy"></div>
         <div>
-          <div class="caddy-hdr-name">Caddy</div>
-          <div class="caddy-hdr-sub">Weather · Scores · Rules</div>
+          <div class="caddy-hdr-name">Chubbs</div>
+          <div class="caddy-hdr-sub">Your caddy for this event</div>
         </div>
         <button id="caddy-close-btn" onclick="toggleCaddy()">✕</button>
       </div>
@@ -3387,7 +3414,7 @@ function toggleCaddy() {
   if (caddyOpen) {
     const msgs = document.getElementById('caddy-messages');
     if (!msgs.children.length) {
-      addCaddyMsg('bot', "🏌️ Hey, I'm your caddy! I can pull up live weather & wind at any course, show score updates, tee times, or answer rules questions. What do you need?");
+      addCaddyMsg('bot', "🏌️ Happy couldn't make it today, so I'll be your caddy for this event. I can pull up live weather & wind at any course, show score updates, tee times, or answer rules questions. What do you need?");
     }
     setTimeout(() => document.getElementById('caddy-input').focus(), 50);
   }

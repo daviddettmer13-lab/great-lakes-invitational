@@ -112,7 +112,7 @@ input,textarea{font-family:inherit;outline:none;}
 .home-tile:active{border-color:var(--gold);background:var(--bg3);}
 .home-tile-circle{width:60px;height:60px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px;background:rgba(201,168,76,.07);}
 .home-tile-label{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
-.home-scores-strip{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:8px;padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 0;}
+.home-scores-strip{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:8px;padding:12px 14px;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .home-score-chip{text-align:center;}
 .home-score-num{font-size:28px;font-weight:900;line-height:1;}
 .home-score-chip.michigan .home-score-num{color:var(--michigan-light);}
@@ -1071,8 +1071,6 @@ const ROUNDS = [
   }
 ];
 
-const STABLEFORD_PTS = { eagle:7, birdie:5, par:3, bogey:2, double:1, triple:0 };
-
 // ═══════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════
@@ -1082,7 +1080,6 @@ let state = {
   matchups: {},   // roundId -> { matchupId -> { id, michigan:[id,id], superior:[id,id] } }
   scores: {},     // matchupId -> { holes: { '1': { pid: score, ... } } }
   ctp: {},        // 'roundId_hole' -> { playerId, team }
-  skins: {},      // 'roundId_hole' -> team (calculated)
   messages: [],   // [{id,userId,name,team,text,ts}]
   bets: [],       // [{id,type:'bet',proposerId,proposerName,description,amount,participants,locked,ts}]
   points: { michigan:0, superior:0 }
@@ -1094,7 +1091,6 @@ let rosterFilter = 'all';
 let chatFilter = 'all';
 let currentRoundId = null;
 let currentMatchupId = null;
-let selectedUserId = null;
 let editingMatchupRoundId = null;
 let currentScorecardHole = 1;
 let scorecardViewMode = 'hole'; // 'hole' | 'table'
@@ -1102,7 +1098,6 @@ let leaderboardDirty = false;
 let unreadChatCount = 0;
 let lastChatMessageCount = 0;
 let appInitialized = false;
-let resolvingBetId = null;
 
 // ═══════════════════════════════════════════════════
 // PERSISTENCE
@@ -1822,8 +1817,8 @@ function showSignScorecardModal(matchupId) {
   if (!found) return;
   const { matchup } = found;
 
-  const mPlayers = (matchup.michigan||[]).map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
-  const sPlayers = (matchup.superior||[]).map(id=>state.players.find(p=>p.id===id)).filter(Boolean);
+  const mPlayers = (matchup.michigan||[]).map(id=>state.players[id]).filter(Boolean);
+  const sPlayers = (matchup.superior||[]).map(id=>state.players[id]).filter(Boolean);
 
   document.getElementById('sig-select-m').innerHTML =
     '<option value="">— Select signing player —</option>' +
@@ -1905,8 +1900,8 @@ function submitSignedScorecard() {
   if (!sigHasDrawn.m)   { showToast('⚠️ Michigan signature required'); return; }
   if (!sigHasDrawn.s)   { showToast('⚠️ Superior signature required'); return; }
 
-  const mPlayer = state.players.find(p=>p.id===mSel.value);
-  const sPlayer = state.players.find(p=>p.id===sSel.value);
+  const mPlayer = state.players[mSel.value];
+  const sPlayer = state.players[sSel.value];
 
   state.completedMatches[signingMatchupId] = {
     finalized: true,
@@ -3362,26 +3357,6 @@ function renderBetCard(bet) {
 }
 
 // ═══════════════════════════════════════════════════
-// USER SELECTION
-// ═══════════════════════════════════════════════════
-
-function selectUser(id) {
-  selectedUserId = id;
-}
-
-function confirmUserSelection() {
-  if (!selectedUserId || !state.players[selectedUserId]) {
-    showToast('Pick a player first'); return;
-  }
-  currentUser = { id:selectedUserId, name:state.players[selectedUserId].name, team:state.players[selectedUserId].team };
-  save('currentUser', currentUser);
-  closeModal('user-modal');
-  const lbl = document.getElementById('chat-user-label');
-  if (lbl) lbl.textContent = '👤 ' + currentUser.name + ' · ' + teamName(currentUser.team);
-  showToast('👋 Welcome, '+currentUser.name+'!');
-}
-
-// ═══════════════════════════════════════════════════
 // MODALS
 // ═══════════════════════════════════════════════════
 
@@ -3396,10 +3371,6 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('active');
   });
 });
-
-// ═══════════════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════
 // CADDY AI ASSISTANT
@@ -3501,7 +3472,7 @@ function caddyDegToCompass(deg) {
 }
 
 function getCaddyScores() {
-  const {mPts, sPts, breakdown} = calcTeamPoints();
+  const {mPts, sPts, breakdown} = calcAllPoints();
   let out = '';
   if (mPts > sPts)      out = `🟢 Team Michigan leads ${mPts}–${sPts}`;
   else if (sPts > mPts) out = `🔵 Team Superior leads ${sPts}–${mPts}`;

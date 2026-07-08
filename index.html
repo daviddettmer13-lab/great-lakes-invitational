@@ -243,9 +243,23 @@ input,textarea{font-family:inherit;outline:none;}
 .rules-highlight{background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:10px 12px;margin:8px 0;font-size:12px;color:var(--text2);}
 
 /* ── MAP PAGE ────────────────────────────────────── */
-#page-map{padding:0;display:none;flex-direction:column;height:calc(100dvh - var(--header-h) - var(--nav-h));overflow:hidden;}
+#page-map{padding:0;display:none;flex-direction:column;height:calc(100dvh - var(--header-h) - var(--nav-h));overflow:hidden;position:relative;}
 #page-map.active{display:flex;}
 #course-map{flex:1;min-height:0;width:100%;}
+#map-logo-btn{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:500;width:74px;height:74px;border-radius:50%;border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(201,168,76,.15),0 4px 24px rgba(0,0,0,.7);background:var(--bg2);padding:0;cursor:pointer;overflow:hidden;animation:map-logo-pulse 3s ease-in-out infinite;}
+#map-logo-btn img{width:100%;height:100%;object-fit:cover;display:block;}
+@keyframes map-logo-pulse{0%,100%{box-shadow:0 0 0 6px rgba(201,168,76,.15),0 4px 24px rgba(0,0,0,.7);}50%{box-shadow:0 0 0 12px rgba(201,168,76,.08),0 4px 24px rgba(0,0,0,.7);}}
+/* ── DASHBOARD OVERLAY ───────────────────────────── */
+#dashboard-overlay{position:fixed;inset:0;z-index:3000;background:rgba(6,6,6,.96);display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
+#dashboard-overlay.active{display:flex;}
+.dash-logo{width:96px;height:96px;border-radius:18px;box-shadow:0 0 40px rgba(201,168,76,.35);margin-bottom:18px;}
+.dash-title{font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text);margin-bottom:4px;}
+.dash-sub{font-size:11px;color:var(--text3);letter-spacing:.5px;margin-bottom:36px;}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:400px;padding:0 20px;}
+.dash-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s;}
+.dash-tile:active{background:var(--bg3);border-color:var(--gold);}
+.dash-tile-icon{font-size:28px;line-height:1;}
+.dash-tile-label{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text2);}
 .leaflet-container{font-family:inherit;background:#111;}
 .leaflet-control-attribution{background:rgba(0,0,0,.55)!important;color:#666!important;font-size:9px!important;}
 .leaflet-control-attribution a{color:#888!important;}
@@ -699,6 +713,50 @@ input,textarea{font-family:inherit;outline:none;}
         <button id="loc-toggle-btn" class="btn btn-sm btn-ghost" onclick="toggleLocationSharing()" style="font-size:12px;">📍 Share Location</button>
       </div>
       <div id="course-map"></div>
+      <button id="map-logo-btn" onclick="openDashboard()" title="Open Dashboard">
+        <img src="gli-logo.png" alt="GLI">
+      </button>
+    </div>
+
+    <!-- DASHBOARD OVERLAY -->
+    <div id="dashboard-overlay">
+      <img src="gli-logo.png" class="dash-logo" alt="GLI">
+      <div class="dash-title">Great Lakes Invitational</div>
+      <div class="dash-sub">2026 · AUG 26–30</div>
+      <div class="dash-grid">
+        <div class="dash-tile" onclick="navTo('home')">
+          <div class="dash-tile-icon">🏠</div>
+          <div class="dash-tile-label">Home</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('schedule')">
+          <div class="dash-tile-icon">📅</div>
+          <div class="dash-tile-label">Schedule</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('rosters')">
+          <div class="dash-tile-icon">👥</div>
+          <div class="dash-tile-label">Rosters</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('scorecards')">
+          <div class="dash-tile-icon">⛳</div>
+          <div class="dash-tile-label">Cards</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('leaderboard')">
+          <div class="dash-tile-icon">🏆</div>
+          <div class="dash-tile-label">Board</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('rules')">
+          <div class="dash-tile-icon">📋</div>
+          <div class="dash-tile-label">Rules</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('chat')">
+          <div class="dash-tile-icon">💬</div>
+          <div class="dash-tile-label">Chat</div>
+        </div>
+        <div class="dash-tile" onclick="navTo('map')">
+          <div class="dash-tile-icon">🗺️</div>
+          <div class="dash-tile-label">Map</div>
+        </div>
+      </div>
     </div>
 
   </div><!-- /content -->
@@ -1252,6 +1310,15 @@ function tryReconnectFirebase() {
 // ═══════════════════════════════════════════════════
 
 let currentTab = 'home';
+
+function openDashboard() {
+  document.getElementById('dashboard-overlay').classList.add('active');
+}
+
+function navTo(tab) {
+  document.getElementById('dashboard-overlay').classList.remove('active');
+  switchTab(tab);
+}
 
 function refreshApp() {
   switchTab(currentTab);
@@ -2700,8 +2767,8 @@ function calcAllPoints() {
     }
   });
 
-  // CTP points
-  const ctpEntries = Object.values(state.ctp);
+  // CTP points — only count entries with a player AND a recorded distance
+  const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId && c.distance && c.team);
   ctpEntries.forEach(c => {
     if (c.team==='michigan') mPts+=0.5;
     else if (c.team==='superior') sPts+=0.5;
@@ -2729,8 +2796,8 @@ function getPlayerIndividualPoints(playerId) {
       else if (team==='superior'&&sWins>mWins) pts += (sWins-mWins)/9;
     });
   });
-  // CTP
-  Object.values(state.ctp).forEach(c => { if (c.playerId===playerId) pts+=0.5; });
+  // CTP — only count if distance is also recorded
+  Object.values(state.ctp).forEach(c => { if (c && c.playerId===playerId && c.distance) pts+=0.5; });
   return Math.round(pts*10)/10;
 }
 

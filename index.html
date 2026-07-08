@@ -778,6 +778,7 @@ input,textarea{font-family:inherit;outline:none;}
     </div>
     <div style="padding:16px 20px;" id="ppv-fields"></div>
     <div style="padding:0 20px 20px;">
+      <div id="ppv-actions"></div>
       <button class="btn btn-ghost btn-full" onclick="closeModal('player-profile-view')">Close</button>
     </div>
   </div>
@@ -1137,12 +1138,19 @@ function showPlayerProfile(playerId) {
   const fields = [
     p.hometown   ? `<div class="ppv-row"><span>🏡</span><div><div class="ppv-label">Hometown</div><div class="ppv-val">${p.hometown}</div></div></div>` : '',
     p.handicap != null ? `<div class="ppv-row"><span>⛳</span><div><div class="ppv-label">Handicap</div><div class="ppv-val">${p.handicap}</div></div></div>` : '',
-    p.phone      ? `<div class="ppv-row"><span>📱</span><div><div class="ppv-label">Phone</div><div class="ppv-val">${p.phone}</div></div></div>` : '',
-    p.venmoId    ? `<div class="ppv-row"><span>💸</span><div><div class="ppv-label">Venmo</div><div class="ppv-val">@${p.venmoId}</div></div></div>` : '',
+    p.phone      ? `<div class="ppv-row"><span>📱</span><div><div class="ppv-label">Phone</div><a href="tel:${p.phone}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">${p.phone}</a></div></div>` : '',
+    p.venmoId    ? `<div class="ppv-row"><span>💸</span><div><div class="ppv-label">Venmo</div><a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">@${p.venmoId}</a></div></div>` : '',
   ].filter(Boolean).join('');
 
   document.getElementById('ppv-fields').innerHTML = fields ||
     '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px 0;">Profile not yet filled out</div>';
+
+  // Build action buttons
+  const actionBtns = [];
+  if (p.phone) actionBtns.push(`<a href="tel:${p.phone}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text);text-decoration:none;font-size:13px;font-weight:700;">📱 Call</a>`);
+  if (p.venmoId) actionBtns.push(`<a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;background:var(--gold);border:1px solid var(--gold);border-radius:12px;color:#000;text-decoration:none;font-size:13px;font-weight:800;">💸 Pay on Venmo</a>`);
+  const actionsHtml = actionBtns.length ? `<div style="display:flex;gap:8px;margin-bottom:12px;">${actionBtns.join('')}</div>` : '';
+  document.getElementById('ppv-actions').innerHTML = actionsHtml;
 
   showModal('player-profile-view');
 }
@@ -2265,16 +2273,21 @@ function renderLeaderboard() {
       <div class="lb-table-head">
         <div>#</div>
         <div>Player</div>
-        <div style="text-align:center;">Team</div>
+        <div style="text-align:center;">Contact</div>
         <div style="text-align:center;">Pts</div>
       </div>
-      ${players.map((p,i)=>`
-        <div class="lb-table-row">
+      ${players.map((p,i)=>{
+        const phoneLink = p.phone ? `<a href="tel:${p.phone}" onclick="event.stopPropagation();" style="text-decoration:none;font-size:18px;line-height:1;" title="Call ${p.name}">📱</a>` : '';
+        const venmoLink = p.venmoId ? `<a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" onclick="event.stopPropagation();" style="text-decoration:none;font-size:18px;line-height:1;" title="Pay ${p.name} on Venmo">💸</a>` : '';
+        const teamDot = p.team !== 'unassigned' ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)'};margin-right:5px;vertical-align:middle;flex-shrink:0;"></span>` : '';
+        return `
+        <div class="lb-table-row" onclick="showPlayerProfile('${p.id}')" style="cursor:pointer;">
           <div class="lb-rank">${i+1}</div>
-          <div style="font-size:12px;font-weight:600;">${p.name}</div>
-          <div style="text-align:center;"><span class="badge ${p.team}" style="font-size:9px;padding:2px 7px;">${p.team==='michigan'?'M':'S'}</span></div>
+          <div style="font-size:12px;font-weight:600;display:flex;align-items:center;">${teamDot}${p.name}</div>
+          <div style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">${phoneLink}${venmoLink}</div>
           <div style="text-align:center;font-weight:800;color:${p.pts>0?'var(--gold)':'var(--text3)'};">${p.pts||0}</div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>` : ''}`;
 }
 

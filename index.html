@@ -283,7 +283,9 @@ input,textarea{font-family:inherit;outline:none;}
 #caddy-avatar img{width:100%;height:130%;object-fit:cover;object-position:center 8%;}
 .caddy-hdr-name{font-size:13px;font-weight:800;color:var(--text);}
 .caddy-hdr-sub{font-size:10px;color:var(--gold);letter-spacing:.3px;}
-#caddy-close-btn{margin-left:auto;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;}
+#caddy-voice-btn{margin-left:auto;background:none;border:none;color:var(--text3);font-size:17px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:color .15s;}
+#caddy-voice-btn.on{color:var(--gold);}
+#caddy-close-btn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:6px;}
 #caddy-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
 .caddy-msg{max-width:88%;font-size:13px;line-height:1.5;padding:9px 12px;border-radius:12px;white-space:pre-wrap;}
 .caddy-msg-bot{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:4px 12px 12px 12px;color:var(--text);}
@@ -795,6 +797,7 @@ input,textarea{font-family:inherit;outline:none;}
           <div class="caddy-hdr-name">Chubbs</div>
           <div class="caddy-hdr-sub">Your caddy for this event</div>
         </div>
+        <button id="caddy-voice-btn" onclick="toggleCaddyVoice()" title="Voice off — tap to enable">🔇</button>
         <button id="caddy-close-btn" onclick="toggleCaddy()">✕</button>
       </div>
       <div id="caddy-messages"></div>
@@ -3453,6 +3456,68 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 let caddyOpen = false;
 let caddyVoiceActive = false;
+let caddyVoiceEnabled = false;
+let caddySynthVoice = null;
+let caddyVoiceReady = false;
+
+function initCaddyVoice() {
+  if (!window.speechSynthesis || caddyVoiceReady) return;
+  caddyVoiceReady = true;
+  function pickVoice() {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    // Priority list — deep male US English voices closest to Carl Weathers' baritone
+    const tests = [
+      v => v.name === 'Alex',
+      v => v.name === 'Aaron' && v.lang.startsWith('en'),
+      v => v.name === 'Nathan' && v.lang.startsWith('en'),
+      v => v.name === 'Fred' && v.lang.startsWith('en'),
+      v => /\b(aaron|lee|nathan|oliver|george|arthur|james|thomas|david|mark)\b/i.test(v.name) && v.lang.startsWith('en'),
+      v => v.lang === 'en-US' && !/samantha|victoria|karen|moira|fiona|veena|allison|ava|zira|hazel|susan|cortana/i.test(v.name),
+      v => v.lang.startsWith('en'),
+    ];
+    for (const t of tests) {
+      const m = voices.find(t);
+      if (m) { caddySynthVoice = m; return; }
+    }
+  }
+  pickVoice();
+  if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = pickVoice;
+}
+
+function speakChubbs(text) {
+  if (!caddyVoiceEnabled || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  // Strip emoji and non-ASCII so they don't get read as "emoji name"
+  const clean = text
+    .replace(/[\u{1F000}-\u{1FFFF}]|\u{200D}|️/gu, '')
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean) return;
+  const utter = new SpeechSynthesisUtterance(clean);
+  if (caddySynthVoice) utter.voice = caddySynthVoice;
+  utter.pitch  = 0.72;   // deep baritone
+  utter.rate   = 0.87;   // deliberate, cool
+  utter.volume = 1.0;
+  speechSynthesis.speak(utter);
+}
+
+function toggleCaddyVoice() {
+  caddyVoiceEnabled = !caddyVoiceEnabled;
+  const btn = document.getElementById('caddy-voice-btn');
+  btn.textContent = caddyVoiceEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('on', caddyVoiceEnabled);
+  btn.title = caddyVoiceEnabled ? 'Voice on — tap to mute' : 'Voice off — tap to enable';
+  if (caddyVoiceEnabled) {
+    initCaddyVoice();
+    // Fire a silent utterance to unlock audio on mobile
+    const unlock = new SpeechSynthesisUtterance('');
+    speechSynthesis.speak(unlock);
+  } else {
+    speechSynthesis.cancel();
+  }
+}
 
 function toggleCaddy() {
   caddyOpen = !caddyOpen;
@@ -3460,9 +3525,13 @@ function toggleCaddy() {
   if (caddyOpen) {
     const msgs = document.getElementById('caddy-messages');
     if (!msgs.children.length) {
-      addCaddyMsg('bot', "🏌️ Happy couldn't make it today, so I'll be your caddy for this event. I can pull up live weather & wind at any course, show score updates, tee times, or answer rules questions. What do you need?");
+      const greeting = "Happy couldn't make it today, so I'll be your caddy for this event. I can pull up live weather and wind at any course, show score updates, tee times, or answer rules questions. What do you need?";
+      addCaddyMsg('bot', '🏌️ ' + greeting);
+      speakChubbs(greeting);
     }
     setTimeout(() => document.getElementById('caddy-input').focus(), 50);
+  } else {
+    window.speechSynthesis && speechSynthesis.cancel();
   }
 }
 
@@ -3476,6 +3545,7 @@ async function askCaddy() {
   const answer = await caddyAnswer(q.toLowerCase());
   thinkEl.remove();
   addCaddyMsg('bot', answer);
+  speakChubbs(answer);
 }
 
 function addCaddyMsg(role, text, cls = '') {

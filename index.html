@@ -1989,6 +1989,7 @@ function renderHoleCard(round, matchup) {
     const val = holeData[p.id]||'';
     const numVal = Number(val);
     let cls='', label='';
+    const pts = (val!==''&&!isNaN(numVal)&&numVal>0&&isStableford) ? stablefordPoints(numVal,par) : null;
     if(val&&!isNaN(numVal)){
       const d=numVal-par;
       if(d<=-2){cls='eagle';label='Eagle';}
@@ -2008,6 +2009,7 @@ function renderHoleCard(round, matchup) {
           style="width:48px;height:42px;font-size:20px;border-radius:8px;"
           oninput="setScore('${matchup.id}','${h}','${p.id}',this.value);renderHoleCard(ROUNDS.find(r=>r.id==='${round.id}'),state.matchups['${round.id}']['${matchup.id}'])"
           onchange="updateScoreStyle(this,${par})">
+        ${isStableford?`<div style="min-width:40px;text-align:center;padding:0 2px;"><div style="font-size:22px;font-weight:900;color:${pts!==null?'var(--gold)':'var(--text3)'};">${pts!==null?pts:'–'}</div><div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.5px;">PTS</div></div>`:''}
       </div>`;
   }).join('');
 
@@ -2066,6 +2068,24 @@ function renderHoleCard(round, matchup) {
       </div>
     </div>`;
 
+  // Stableford: compute this-hole team pts for display in the scores card
+  let holeStablefordSummary = '';
+  if (isStableford) {
+    const mHP=(matchup.michigan||[]).reduce((acc,pid)=>{const v=Number(holeData[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+    const sHP=(matchup.superior||[]).reduce((acc,pid)=>{const v=Number(holeData[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+    const mFull=(matchup.michigan||[]).every(pid=>{const v=Number(holeData[pid]);return!isNaN(v)&&v>0;});
+    const sFull=(matchup.superior||[]).every(pid=>{const v=Number(holeData[pid]);return!isNaN(v)&&v>0;});
+    if(mFull||sFull){
+      const winCls=mHP>sHP?'var(--michigan-light)':sHP>mHP?'var(--superior-light)':'var(--text2)';
+      const winText=mFull&&sFull?(mHP>sHP?'Michigan wins hole':sHP>mHP?'Superior wins hole':'Halved'):'';
+      holeStablefordSummary='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">'
+        +'<div style="text-align:center;flex:1;"><div style="font-size:10px;font-weight:700;color:var(--michigan-light);letter-spacing:.5px;">MICH</div><div style="font-size:26px;font-weight:900;color:var(--michigan-light);">'+(mFull?mHP:'–')+'</div></div>'
+        +'<div style="text-align:center;padding:0 8px;"><div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:1px;">THIS HOLE</div>'+(winText?'<div style="font-size:10px;font-weight:700;margin-top:3px;color:'+winCls+';">'+winText+'</div>':'')+'</div>'
+        +'<div style="text-align:center;flex:1;"><div style="font-size:10px;font-weight:700;color:var(--superior-light);letter-spacing:.5px;">SUP</div><div style="font-size:26px;font-weight:900;color:var(--superior-light);">'+(sFull?sHP:'–')+'</div></div>'
+        +'</div>';
+    }
+  }
+
   document.getElementById('sc-hole-view').innerHTML = `
     <!-- Hole dots nav -->
     <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:10px;">
@@ -2079,6 +2099,7 @@ function renderHoleCard(round, matchup) {
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Enter Scores</div>
       ${scoreRows}
+      ${holeStablefordSummary}
     </div>
     <!-- Match status -->
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;text-align:center;margin-bottom:12px;">
@@ -2124,7 +2145,7 @@ function renderScorecardView(round, matchup) {
     <th style="min-width:36px;color:${teeColor};">${round.tee||'Yd'}</th>
     ${playerColumns.map(p=>`<th style="color:${p.team==='michigan'?'var(--michigan-light)':'var(--superior-light)'};min-width:50px;">${shortName(p.name)}</th>`).join('')}
     ${!isStableford&&!isTeamScore?'<th style="min-width:50px;">Result</th>':''}
-    ${isStableford?'<th style="min-width:40px;">Pts</th>':''}
+    ${isStableford?'<th style="min-width:40px;">Result</th>':''}
   </tr>`;
 
   let tbody = '';
@@ -2149,6 +2170,22 @@ function renderScorecardView(round, matchup) {
       }
     }
 
+    // Stableford: compute combined team pts for this hole, determine winner, track mWins/sWins
+    let ptsCell = '';
+    if (isStableford) {
+      const mHP=(matchup.michigan||[]).reduce((acc,pid)=>{const v=Number(holeData[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+      const sHP=(matchup.superior||[]).reduce((acc,pid)=>{const v=Number(holeData[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+      const mHas=(matchup.michigan||[]).some(pid=>{const v=Number(holeData[pid]);return!isNaN(v)&&v>0;});
+      const sHas=(matchup.superior||[]).some(pid=>{const v=Number(holeData[pid]);return!isNaN(v)&&v>0;});
+      if(mHas&&sHas){
+        if(mHP>sHP){mWins++;ptsCell=`<td><span class="hole-result win-m">M</span></td>`;}
+        else if(sHP>mHP){sWins++;ptsCell=`<td><span class="hole-result win-s">S</span></td>`;}
+        else{ptsCell=`<td><span class="hole-result halve">H</span></td>`;}
+      } else {
+        ptsCell=`<td></td>`;
+      }
+    }
+
     if (h===9) {
       const outYd = (round.yardage||[]).slice(0,9).reduce((a,b)=>a+b,0);
       // Add subtotal row after hole 9
@@ -2161,18 +2198,11 @@ function renderScorecardView(round, matchup) {
           return `<td style="font-size:11px;font-weight:700;color:var(--text2);">${out||''}</td>`;
         }).join('')}
         ${!isStableford&&!isTeamScore?`<td style="font-size:10px;color:var(--text2);">${mWins>sWins?`M${mWins-sWins}UP`:sWins>mWins?`S${sWins-mWins}UP`:'AS'}</td>`:''}
-        ${isStableford?'<td></td>':''}
+        ${isStableford?`<td style="font-size:10px;color:var(--text2);">${mWins>sWins?`M${mWins-sWins}UP`:sWins>mWins?`S${sWins-mWins}UP`:'AS'}</td>`:''}
       </tr>`;
     }
     if (h===18) {
       // Will add total after
-    }
-
-    let ptsCell = '';
-    if (isStableford && playerColumns.length > 0) {
-      const firstPid = playerColumns[0].id;
-      const s = Number(holeData[firstPid]);
-      ptsCell = `<td style="font-size:11px;color:var(--gold);">${holeData[firstPid]?stablefordPoints(s,par):''}</td>`;
     }
 
     const isPar3 = par === 3;
@@ -2188,6 +2218,12 @@ function renderScorecardView(round, matchup) {
         if(val&&!isNaN(numVal)) {
           const d=numVal-par;
           if(d<=-2) cls='eagle'; else if(d===-1) cls='birdie'; else if(d===1) cls='bogey'; else if(d>=2) cls='double';
+        }
+        if(isStableford){
+          const spts=(val!==''&&!isNaN(numVal)&&numVal>0)?stablefordPoints(numVal,par):null;
+          return `<td style="text-align:center;"><input type="number" class="score-input ${cls}" min="1" max="12" value="${val}"
+            oninput="setScore('${matchup.id}','${h}','${p.id}',this.value)"
+            onchange="updateScoreStyle(this,${par})"><div style="font-size:9px;font-weight:800;color:var(--gold);margin-top:1px;">${spts!==null?spts+'pt':''}</div></td>`;
         }
         return `<td><input type="number" class="score-input ${cls}" min="1" max="12" value="${val}"
           oninput="setScore('${matchup.id}','${h}','${p.id}',this.value)"
@@ -2212,8 +2248,7 @@ function renderScorecardView(round, matchup) {
       for(let i=1;i<=18;i++){const v=Number((scores.holes?.[i]||{})[p.id]);if(!isNaN(v)&&v>0)tot+=v;}
       return `<td style="font-size:12px;font-weight:800;color:var(--gold);">${tot||''}</td>`;
     }).join('')}
-    ${!isStableford&&!isTeamScore?`<td style="font-size:11px;font-weight:800;">${matchResultCell}</td>`:''}
-    ${isStableford?'<td></td>':''}
+    ${(!isStableford&&!isTeamScore)||isStableford?`<td style="font-size:11px;font-weight:800;">${matchResultCell}</td>`:''}
   </tr>`;
 
   const complete = isMatchComplete(matchup, scores, round);

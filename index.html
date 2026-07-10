@@ -2722,7 +2722,7 @@ function showCreateMatchup() {
   const playerSelect = (list, prefix, label) => list.map(p=>
     `<option value="${p.id}">${p.name}</option>`).join('');
 
-  const numPerSide = (isSingles||isStableford) ? 1 : 2;
+  const numPerSide = isSingles ? 1 : 2;
 
   let body = '';
   for (let i=0; i<numPerSide; i++) {
@@ -2752,7 +2752,7 @@ function saveMatchup() {
   const round = ROUNDS.find(r=>r.id===editingMatchupRoundId);
   const isSingles = round.format==='singles_match';
   const isStableford = round.format==='stableford';
-  const numPerSide = (isSingles||isStableford) ? 1 : 2;
+  const numPerSide = isSingles ? 1 : 2;
 
   const michPlayers = [];
   const supPlayers = [];

@@ -210,6 +210,13 @@ input,textarea{font-family:inherit;outline:none;}
 .score-input.double{background:rgba(80,80,100,.3);border-color:rgba(100,100,120,.5);color:var(--text3);}
 .score-input.triple{background:rgba(60,20,20,.4);border-color:rgba(100,40,40,.5);color:#666;}
 .hole-result{font-size:11px;font-weight:800;}
+.stat-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap;letter-spacing:.01em;}
+.stat-pill.stat-hio{background:rgba(201,168,76,.25);color:var(--gold);border:1px solid var(--gold);}
+.stat-pill.stat-eagle{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.4);}
+.stat-pill.stat-birdie{background:rgba(40,130,70,.2);color:#2a9a54;border:1px solid rgba(40,130,70,.4);}
+.stat-pill.stat-skin{background:rgba(80,160,255,.15);color:#5ab4ff;border:1px solid rgba(80,160,255,.35);}
+.stat-pill.stat-ctp{background:rgba(200,80,200,.15);color:#d080d0;border:1px solid rgba(200,80,200,.35);}
+.player-stats-strip{display:flex;flex-wrap:wrap;gap:4px;}
 .hole-result.win-m{color:var(--michigan-light);}
 .hole-result.win-s{color:var(--superior-light);}
 .hole-result.halve{color:var(--text3);}
@@ -297,17 +304,6 @@ input,textarea{font-family:inherit;outline:none;}
 #caddy-mic-btn,#caddy-send-btn{background:none;border:1px solid var(--border);border-radius:10px;width:36px;height:36px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2);}
 #caddy-mic-btn.listening{border-color:red;color:red;}
 #caddy-send-btn{background:var(--gold);border-color:var(--gold);color:#000;font-weight:700;}
-/* ── DASHBOARD OVERLAY ───────────────────────────── */
-#dashboard-overlay{position:fixed;inset:0;z-index:3000;background:rgba(6,6,6,.96);display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);}
-#dashboard-overlay.active{display:flex;}
-.dash-logo{width:96px;height:96px;border-radius:18px;box-shadow:0 0 40px rgba(201,168,76,.35);margin-bottom:18px;}
-.dash-title{font-size:17px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--text);margin-bottom:4px;}
-.dash-sub{font-size:11px;color:var(--text3);letter-spacing:.5px;margin-bottom:36px;}
-.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:400px;padding:0 20px;}
-.dash-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s;}
-.dash-tile:active{background:var(--bg3);border-color:var(--gold);}
-.dash-tile-icon{font-size:28px;line-height:1;}
-.dash-tile-label{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text2);}
 .leaflet-container{font-family:inherit;background:#111;}
 .leaflet-control-attribution{background:rgba(0,0,0,.55)!important;color:#666!important;font-size:9px!important;}
 .leaflet-control-attribution a{color:#888!important;}
@@ -495,8 +491,8 @@ input,textarea{font-family:inherit;outline:none;}
         <span class="hdr-score-lbl">Sup</span>
       </div>
     </div>
-    <!-- Center: GLI logo (opens dashboard) -->
-    <button id="header-logo-btn" onclick="openDashboard()" title="Navigation">
+    <!-- Center: GLI logo (goes to Home) -->
+    <button id="header-logo-btn" onclick="switchTab('home')" title="Home">
       <img src="gli-logo.png" alt="GLI">
     </button>
     <!-- Right: avatar -->
@@ -741,13 +737,12 @@ input,textarea{font-family:inherit;outline:none;}
       <div class="rules-section">
         <h3>📋 General Rules</h3>
         <ul>
-          <li>USGA rules apply unless superseded by tournament rules below</li>
           <li><strong>Preferred Lies</strong> — You may fluff your lie anywhere on the course except in a hazard. A bunker is a hazard.</li>
           <li><strong>Out of Bounds / Lost Ball</strong> — Drop at the point of entry into the hazard, 2 club lengths no closer to the hole. 1 stroke penalty (lying 2, hitting 3).</li>
           <li><strong>Conceded Holes</strong> — A hole may be conceded, but all 18 holes must be played.</li>
           <li><strong>Maximum Score</strong> — Double par on any hole (e.g. max 6 on a par 3, 8 on a par 4, 10 on a par 5).</li>
           <li><strong>Gimmes</strong> — Within the leather; must be conceded by opponent.</li>
-          <li><strong>Slow Play</strong> — Please keep pace with the group ahead.</li>
+          <li><strong>Commissioner's Decision</strong> — The Commissioner makes the final ruling on any rule dispute. All rebuttals must be submitted through team captains and will be considered for board review.</li>
         </ul>
       </div>
     </div>
@@ -808,46 +803,6 @@ input,textarea{font-family:inherit;outline:none;}
       </div>
     </div>
 
-    <!-- DASHBOARD OVERLAY -->
-    <div id="dashboard-overlay">
-      <img src="gli-logo.png" class="dash-logo" alt="GLI">
-      <div class="dash-title">Great Lakes Invitational</div>
-      <div class="dash-sub">2026 · AUG 26–30</div>
-      <div class="dash-grid">
-        <div class="dash-tile" onclick="navTo('home')">
-          <div class="dash-tile-icon">🏠</div>
-          <div class="dash-tile-label">Home</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('schedule')">
-          <div class="dash-tile-icon">📅</div>
-          <div class="dash-tile-label">Schedule</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('rosters')">
-          <div class="dash-tile-icon">👥</div>
-          <div class="dash-tile-label">Rosters</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('scorecards')">
-          <div class="dash-tile-icon">⛳</div>
-          <div class="dash-tile-label">Cards</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('leaderboard')">
-          <div class="dash-tile-icon">🏆</div>
-          <div class="dash-tile-label">Board</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('rules')">
-          <div class="dash-tile-icon">📋</div>
-          <div class="dash-tile-label">Rules</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('chat')">
-          <div class="dash-tile-icon">💬</div>
-          <div class="dash-tile-label">Chat</div>
-        </div>
-        <div class="dash-tile" onclick="navTo('map')">
-          <div class="dash-tile-icon">🗺️</div>
-          <div class="dash-tile-label">Map</div>
-        </div>
-      </div>
-    </div>
 
   </div><!-- /content -->
 
@@ -992,6 +947,7 @@ input,textarea{font-family:inherit;outline:none;}
       <div id="ppv-nickname" style="font-size:14px;color:var(--gold);margin-top:2px;"></div>
       <div id="ppv-team-badge" style="margin-top:8px;"></div>
     </div>
+    <div id="ppv-stats" style="padding:8px 20px 6px;border-bottom:1px solid var(--border);display:none;"></div>
     <div style="padding:16px 20px;" id="ppv-fields"></div>
     <div style="padding:0 20px 20px;">
       <div id="ppv-actions"></div>
@@ -1358,6 +1314,13 @@ function showPlayerProfile(playerId) {
   document.getElementById('ppv-fields').innerHTML = fields ||
     '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px 0;">Profile not yet filled out</div>';
 
+  const statsEl = document.getElementById('ppv-stats');
+  if (statsEl) {
+    const sh = playerStatsHtml(p.id);
+    statsEl.innerHTML = sh;
+    statsEl.style.display = sh ? '' : 'none';
+  }
+
   // Build action buttons
   const actionBtns = [];
   if (p.phone) actionBtns.push(`<a href="tel:${p.phone}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text);text-decoration:none;font-size:13px;font-weight:700;">📱 Call</a>`);
@@ -1393,12 +1356,7 @@ function tryReconnectFirebase() {
 
 let currentTab = 'home';
 
-function openDashboard() {
-  document.getElementById('dashboard-overlay').classList.add('active');
-}
-
 function navTo(tab) {
-  document.getElementById('dashboard-overlay').classList.remove('active');
   switchTab(tab);
 }
 
@@ -2020,8 +1978,8 @@ function renderHoleCard(round, matchup) {
   const TEE_COLOR_MAP = {Blue:'#4a9ede',White:'#e8e8e8',Red:'#cc3333',Gold:'#c9a84c',Green:'#2a7a3b'};
   const teeColor = TEE_COLOR_MAP[round.tee] || '#888';
 
-  const mPlayers = (matchup.michigan||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'michigan'}));
-  const sPlayers = (matchup.superior||[]).map(id=>({id,name:state.players[id]?.name||'?',team:'superior'}));
+  const mPlayers = (matchup.michigan||[]).map(id=>({id,name:state.players[id]?.name||'?',photoUrl:state.players[id]?.photoUrl||'',nickname:state.players[id]?.nickname||'',team:'michigan'}));
+  const sPlayers = (matchup.superior||[]).map(id=>({id,name:state.players[id]?.name||'?',photoUrl:state.players[id]?.photoUrl||'',nickname:state.players[id]?.nickname||'',team:'superior'}));
   const playerColumns = isTeamScore
     ? [{id:'team_michigan',name:'Michigan',team:'michigan'},{id:'team_superior',name:'Superior',team:'superior'}]
     : [...mPlayers,...sPlayers];
@@ -2072,69 +2030,50 @@ function renderHoleCard(round, matchup) {
       </div>`;
   }).join('');
 
-  // Hole image placeholder — styled SVG
-  const holeSvg = `
-    <svg viewBox="0 0 360 160" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:12px;display:block;">
-      <defs>
-        <linearGradient id="sky${h}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#1a3a2a"/>
-          <stop offset="100%" stop-color="#2d5a3d"/>
-        </linearGradient>
-        <linearGradient id="fairway${h}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#3d7a4a"/>
-          <stop offset="100%" stop-color="#2a5c35"/>
-        </linearGradient>
-      </defs>
-      <rect width="360" height="160" fill="url(#sky${h})"/>
-      <!-- Fairway -->
-      <ellipse cx="180" cy="155" rx="140" ry="60" fill="url(#fairway${h})" opacity="0.8"/>
-      <!-- Tee box -->
-      <rect x="160" y="130" width="40" height="16" rx="3" fill="#4a8c55" stroke="#5aaa65" stroke-width="1"/>
-      <!-- Flag pin -->
-      <line x1="180" y1="62" x2="180" y2="100" stroke="#ccc" stroke-width="2"/>
-      <polygon points="180,62 200,70 180,78" fill="${teeColor}" opacity="0.9"/>
-      <!-- Hole number -->
-      <text x="180" y="48" text-anchor="middle" font-size="28" font-weight="900" fill="rgba(255,255,255,0.15)" font-family="sans-serif">${h}</text>
-      <!-- Details strip -->
-      <rect x="0" y="120" width="360" height="40" fill="rgba(0,0,0,0.45)"/>
-      <text x="20" y="145" font-size="13" font-weight="700" fill="white" font-family="sans-serif">Hole ${h}</text>
-      <text x="20" y="157" font-size="10" fill="${teeColor}" font-family="sans-serif" opacity="0.9">${round.tee||''} Tees</text>
-      <text x="180" y="142" text-anchor="middle" font-size="20" font-weight="900" fill="${isPar3?'#c9a84c':'white'}" font-family="sans-serif">Par ${par}</text>
-      ${yd?`<text x="340" y="142" text-anchor="end" font-size="18" font-weight="800" fill="white" font-family="sans-serif">${yd}</text>
-      <text x="340" y="157" text-anchor="end" font-size="10" fill="rgba(255,255,255,0.6)" font-family="sans-serif">yards</text>`:''}
-      ${isPar3?'<text x="180" y="160" text-anchor="middle" font-size="9" fill="#c9a84c" font-family="sans-serif">⛳ Par 3</text>':''}
-    </svg>`;
+  // Matchup VS card
+  const isSolo = mPlayers.length <= 1 && sPlayers.length <= 1;
+  const avDim = isSolo ? '72px' : '56px';
+  const avFs  = isSolo ? '22px' : '16px';
+  const mkAv = (p) => {
+    const ini = p.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const tc = p.team==='michigan' ? 'var(--michigan-light)' : 'var(--superior-light)';
+    return p.photoUrl
+      ? `<img src="${p.photoUrl}" style="width:${avDim};height:${avDim};border-radius:50%;object-fit:cover;object-position:top;border:3px solid ${tc};flex-shrink:0;">`
+      : `<div style="width:${avDim};height:${avDim};border-radius:50%;background:var(--bg3);border:3px solid ${tc};display:flex;align-items:center;justify-content:center;font-size:${avFs};font-weight:800;color:${tc};flex-shrink:0;">${ini}</div>`;
+  };
+  const mkRow = (p, side) => {
+    const tc = side==='michigan' ? 'var(--michigan-light)' : 'var(--superior-light)';
+    const label = p.nickname || p.name.split(' ')[0];
+    const dir = side==='michigan' ? 'row' : 'row-reverse';
+    const align = side==='michigan' ? 'left' : 'right';
+    return `<div style="display:flex;flex-direction:${dir};align-items:center;gap:10px;">${mkAv(p)}<div style="font-size:${isSolo?'13px':'11px'};font-weight:800;color:${tc};line-height:1.2;text-align:${align};">${label}</div></div>`;
+  };
 
-  // Round 4 = Spruce Run Golf Course at Grand Traverse Resort
-  // Uses Esri World Imagery satellite tiles (free, no API key)
-  // Tile 16/23643/17206 is centered on 44.7748°N -85.4808°W — covers the full Spruce Run layout
-  const holeImage = round.id === 'round4' ? `
-    <div style="position:relative;height:160px;
-                background-image:url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/23632/17206');
-                background-size:cover;background-position:center 18%;background-color:#0d1f13;">
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.5) 100%);"></div>
-      <div style="position:absolute;top:10px;left:12px;background:rgba(0,0,0,0.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:3px 12px;border-radius:16px;display:flex;align-items:baseline;gap:5px;">
-        <span style="color:rgba(255,255,255,0.5);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Hole</span>
-        <span style="color:white;font-size:28px;font-weight:900;line-height:1.1;">${h}</span>
+  const holeSvg = `<div style="display:flex;align-items:center;min-height:${isSolo?'120px':'148px'};padding:16px 14px;gap:6px;">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px;">
+        ${mPlayers.length ? mPlayers.map(p=>mkRow(p,'michigan')).join('') : `<div style="color:var(--text3);font-size:11px;padding-left:4px;">TBD</div>`}
       </div>
-      <div style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:3px 12px;border-radius:16px;display:flex;align-items:baseline;gap:5px;">
-        <span style="color:${isPar3?'#c9a84c':'rgba(255,255,255,0.5)'};font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Par</span>
-        <span style="color:${isPar3?'#c9a84c':'white'};font-size:28px;font-weight:900;line-height:1.1;">${par}</span>
+      <div style="flex-shrink:0;min-width:88px;text-align:center;padding:0 4px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);margin-bottom:2px;">HOLE ${h}</div>
+        <div style="font-size:42px;font-weight:900;color:var(--gold);line-height:1;text-shadow:0 0 22px rgba(201,168,76,.5);">VS</div>
+        <div style="width:28px;height:2px;background:var(--gold);margin:6px auto;border-radius:2px;opacity:.35;"></div>
+        <div style="font-size:13px;font-weight:800;color:var(--text);">Par ${par}</div>
+        ${yd?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${yd} yds</div>`:''}
+        ${isPar3?`<div style="font-size:9px;color:var(--gold);margin-top:3px;letter-spacing:1px;">PAR 3</div>`:''}
       </div>
-      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.62);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="color:rgba(255,255,255,0.5);font-size:10px;font-weight:600;letter-spacing:0.5px;">Spruce Run · Blue Tees</span>
-        ${yd?`<span style="color:white;font-size:17px;font-weight:800;">${yd}<span style="font-size:9px;opacity:0.6;margin-left:3px;">yds</span></span>`:''}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:14px;">
+        ${sPlayers.length ? sPlayers.map(p=>mkRow(p,'superior')).join('') : `<div style="color:var(--text3);font-size:11px;padding-right:4px;">TBD</div>`}
       </div>
-    </div>` : holeSvg;
+    </div>`;
 
   document.getElementById('sc-hole-view').innerHTML = `
     <!-- Hole dots nav -->
     <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:var(--bg2);border-radius:10px;">
       ${dots}
     </div>
-    <!-- Hole image -->
-    <div style="margin-bottom:14px;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.4);">
-      ${holeImage}
+    <!-- Matchup card -->
+    <div style="margin-bottom:14px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+      ${holeSvg}
     </div>
     <!-- Scores -->
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;">
@@ -2810,6 +2749,78 @@ function saveMatchup() {
 // Team formats (scramble/alt_shot): compare team_michigan vs team_superior per matchup.
 // Individual formats (stableford/singles): compare individual player raw scores.
 // Outright lowest (no tie) = 0.5 skins pts for that team.
+function calcPlayerStats(playerId) {
+  let birdies = 0, eagles = 0, hio = 0, skins = 0, ctpWins = 0;
+
+  // CTP wins
+  Object.values(state.ctp || {}).forEach(val => {
+    if (val && val.playerId === playerId) ctpWins++;
+  });
+
+  // Loop all rounds for strokes/skins
+  ROUNDS.forEach(round => {
+    const matchups = Object.values(state.matchups[round.id] || {});
+    if (!matchups.length) return;
+    if (isTeamScoreFormat(round)) return; // team-format rounds have no per-player scores
+
+    const roundPar = round.par || [];
+    const holeEntries = {}; // holeNum → [{pid, score}]
+
+    matchups.forEach(m => {
+      const allIds = [...(m.michigan||[]), ...(m.superior||[])];
+      const sc = state.scores[m.id] || {holes:{}};
+      for (let h = 1; h <= 18; h++) {
+        const hole = sc.holes?.[h];
+        if (!hole) continue;
+
+        // Birdie / eagle / HIO for this player
+        const myRaw = hole[playerId];
+        if (myRaw !== undefined && myRaw !== null && myRaw !== '') {
+          const s = Number(myRaw);
+          const par = roundPar[h-1];
+          if (par) {
+            const rel = s - par;
+            if (s === 1) hio++;
+            else if (rel <= -2) eagles++;
+            else if (rel === -1) birdies++;
+          }
+        }
+
+        // Collect all entries for skins
+        if (!holeEntries[h]) holeEntries[h] = [];
+        allIds.forEach(pid => {
+          const raw = hole[pid];
+          if (raw !== undefined && raw !== null && raw !== '') {
+            holeEntries[h].push({pid, score:Number(raw)});
+          }
+        });
+      }
+    });
+
+    // Skins: sole low score on a hole = 1 skin for playerId
+    Object.entries(holeEntries).forEach(([, entries]) => {
+      if (entries.length < 2) return;
+      const minScore = Math.min(...entries.map(e => e.score));
+      const winners = entries.filter(e => e.score === minScore);
+      if (winners.length === 1 && winners[0].pid === playerId) skins++;
+    });
+  });
+
+  return {birdies, eagles, hio, skins, ctpWins};
+}
+
+function playerStatsHtml(playerId) {
+  const s = calcPlayerStats(playerId);
+  const pills = [];
+  if (s.hio > 0)     pills.push(`<span class="stat-pill stat-hio">🕳️ Hole-in-One${s.hio > 1 ? ' ×'+s.hio : ''}</span>`);
+  if (s.eagles > 0)  pills.push(`<span class="stat-pill stat-eagle">🦅 ${s.eagles} Eagle${s.eagles !== 1 ? 's' : ''}</span>`);
+  if (s.birdies > 0) pills.push(`<span class="stat-pill stat-birdie">🐦 ${s.birdies} Birdie${s.birdies !== 1 ? 's' : ''}</span>`);
+  if (s.skins > 0)   pills.push(`<span class="stat-pill stat-skin">💰 ${s.skins} Skin${s.skins !== 1 ? 's' : ''}</span>`);
+  if (s.ctpWins > 0) pills.push(`<span class="stat-pill stat-ctp">🎯 ${s.ctpWins} CTP</span>`);
+  if (!pills.length) return '';
+  return `<div class="player-stats-strip">${pills.join('')}</div>`;
+}
+
 function calcSkinsForRound(round, matchups) {
   let mSkins = 0, sSkins = 0;
   const isTeamScore = isTeamScoreFormat(round);
@@ -3110,7 +3121,10 @@ function renderLeaderboard() {
         return `
         <div class="lb-table-row" onclick="showPlayerProfile('${p.id}')" style="cursor:pointer;">
           <div class="lb-rank">${i+1}</div>
-          <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;">${avatarHtml}${p.name}</div>
+          <div style="font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:4px;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;">${avatarHtml}${p.name}</div>
+            ${playerStatsHtml(p.id)}
+          </div>
           <div style="text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">${phoneLink}${venmoLink}</div>
           <div style="text-align:center;font-weight:800;color:${p.pts>0?'var(--gold)':'var(--text3)'};">${p.pts||0}</div>
         </div>`;

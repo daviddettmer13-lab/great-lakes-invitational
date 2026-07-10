@@ -1672,7 +1672,14 @@ function getMatchupSummary(matchup, round) {
   if (round.format === 'stableford') {
     const mPts = calcTeamStableford(matchup.michigan||[], scores, round.par);
     const sPts = calcTeamStableford(matchup.superior||[], scores, round.par);
-    return `<span style="color:var(--michigan-light)">Michigan ${mPts}pts</span> vs <span style="color:var(--superior-light)">Superior ${sPts}pts</span>`;
+    const {mWins, sWins, holesPlayed} = calcStablefordHoles(matchup, scores, round);
+    if (!holesPlayed) return 'Tap to enter scores';
+    const diff = mWins - sWins;
+    const ptsStr = `<span style="color:var(--michigan-light)">${mPts}</span> – <span style="color:var(--superior-light)">${sPts}</span> pts`;
+    if (diff === 0) return `All Square — ${ptsStr} thru ${holesPlayed}`;
+    const leader = diff > 0 ? 'Michigan' : 'Superior';
+    const cls = diff > 0 ? 'var(--michigan-light)' : 'var(--superior-light)';
+    return `<span style="color:${cls}">${leader} ${Math.abs(diff)}UP</span> — ${ptsStr} thru ${holesPlayed}`;
   }
 
   const { mWins, sWins, halves } = calcMatchPlayHoles(matchup, scores, round);
@@ -1725,6 +1732,25 @@ function calcTeamStableford(players, scores, par) {
     });
   }
   return total;
+}
+
+// Returns hole-by-hole win counts for a Stableford matchup (higher combined pts wins the hole)
+function calcStablefordHoles(matchup, scores, round) {
+  let mWins=0, sWins=0, halves=0;
+  for (let h=1; h<=18; h++) {
+    const hole = scores.holes?.[h];
+    if (!hole) continue;
+    const par = round.par[h-1];
+    const mHP = (matchup.michigan||[]).reduce((acc,pid)=>{const v=Number(hole[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+    const sHP = (matchup.superior||[]).reduce((acc,pid)=>{const v=Number(hole[pid]);return(!isNaN(v)&&v>0)?acc+stablefordPoints(v,par):acc;},0);
+    const mHas = (matchup.michigan||[]).some(pid=>{const v=Number(hole[pid]);return!isNaN(v)&&v>0;});
+    const sHas = (matchup.superior||[]).some(pid=>{const v=Number(hole[pid]);return!isNaN(v)&&v>0;});
+    if (!mHas || !sHas) continue;
+    if (mHP > sHP) mWins++;
+    else if (sHP > mHP) sWins++;
+    else halves++;
+  }
+  return {mWins, sWins, halves, holesPlayed: mWins+sWins+halves};
 }
 
 function stablefordPoints(score, par) {
@@ -2337,7 +2363,14 @@ function getMPResultText(round, matchup, scores) {
   if (round.format === 'stableford') {
     const mPts = calcTeamStableford(matchup.michigan||[], scores, round.par);
     const sPts = calcTeamStableford(matchup.superior||[], scores, round.par);
-    return `<span style="color:var(--michigan-light)">Michigan ${mPts}</span> &nbsp;vs&nbsp; <span style="color:var(--superior-light)">Superior ${sPts}</span>`;
+    const {mWins, sWins, holesPlayed} = calcStablefordHoles(matchup, scores, round);
+    const ptsStr = `<span style="color:var(--michigan-light)">${mPts}pts</span> vs <span style="color:var(--superior-light)">${sPts}pts</span>`;
+    if (!holesPlayed) return ptsStr;
+    const diff = mWins - sWins;
+    if (diff === 0) return `All Square — ${ptsStr}`;
+    const leader = diff > 0 ? 'Michigan' : 'Superior';
+    const cls = diff > 0 ? 'var(--michigan-light)' : 'var(--superior-light)';
+    return `<span style="color:${cls}">${leader} ${Math.abs(diff)}UP</span> — ${ptsStr}`;
   }
   const {mWins,sWins,halves} = calcMatchPlayHoles(matchup, scores, round);
   const total = mWins+sWins+halves;

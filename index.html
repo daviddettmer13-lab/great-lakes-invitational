@@ -2951,11 +2951,12 @@ function calcAllPoints() {
     const matchups = Object.values(state.matchups[round.id]||{});
     if (!matchups.length) return;
 
+    // Only count match wins / aggregate for FINALIZED matches
+    const finalizedMatchups = matchups.filter(m => !!state.completedMatches[m.id]);
+
     if (round.format === 'stableford') {
-      // Per-matchup hole wins: compare combined Stableford per hole (higher total wins hole)
-      // Plus aggregate: team with highest total Stableford across all matchups = 1 pt
       let mMatchWins=0, sMatchWins=0, mTotalStable=0, sTotalStable=0;
-      matchups.forEach(m => {
+      finalizedMatchups.forEach(m => {
         const sc = state.scores[m.id]||{holes:{}};
         let mHoles=0, sHoles=0;
         for (let h=1; h<=18; h++) {
@@ -2983,13 +2984,16 @@ function calcAllPoints() {
       mPts += mMatchWins; sPts += sMatchWins;
       if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
       if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
-      if (mTotalStable > sTotalStable) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
-      else if (sTotalStable > mTotalStable) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
+      // Aggregate only when all matchups in round are finalized
+      if (finalizedMatchups.length === matchups.length && finalizedMatchups.length > 0) {
+        if (mTotalStable > sTotalStable) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
+        else if (sTotalStable > mTotalStable) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
+      }
     } else {
       // scramble, alt_shot, singles_match — hole-by-hole raw score comparison
       let mAgg=0, sAgg=0, mMatchWins=0, sMatchWins=0;
       let biggestDiff=0, biggestTeam=null;
-      matchups.forEach(m => {
+      finalizedMatchups.forEach(m => {
         const sc = state.scores[m.id]||{holes:{}};
         const {mWins,sWins} = calcMatchPlayHoles(m, sc, round);
         mAgg += mWins; sAgg += sWins;
@@ -3001,11 +3005,14 @@ function calcAllPoints() {
       mPts += mMatchWins; sPts += sMatchWins;
       if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
       if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
-      if (mAgg > sAgg) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
-      else if (sAgg > mAgg) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
-      if (round.format==='singles_match' && biggestTeam) {
-        if (biggestTeam==='michigan') { mPts++; breakdown.push({label:'Round 4 Largest Margin',m:1,s:0}); }
-        else { sPts++; breakdown.push({label:'Round 4 Largest Margin',m:0,s:1}); }
+      // Aggregate only when all matchups in round are finalized
+      if (finalizedMatchups.length === matchups.length && finalizedMatchups.length > 0) {
+        if (mAgg > sAgg) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
+        else if (sAgg > mAgg) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
+        if (round.format==='singles_match' && biggestTeam) {
+          if (biggestTeam==='michigan') { mPts++; breakdown.push({label:'Round 4 Largest Margin',m:1,s:0}); }
+          else { sPts++; breakdown.push({label:'Round 4 Largest Margin',m:0,s:1}); }
+        }
       }
     }
 

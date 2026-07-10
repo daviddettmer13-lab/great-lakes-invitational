@@ -1068,6 +1068,7 @@ let chatFilter = 'all';
 let currentRoundId = null;
 let currentMatchupId = null;
 let editingMatchupRoundId = null;
+let editingMatchupId = null;
 let currentScorecardHole = 1;
 let scorecardViewMode = 'hole'; // 'hole' | 'table'
 let leaderboardDirty = false;
@@ -1635,10 +1636,16 @@ function renderMatchupList(round) {
     return;
   }
 
+  const admin = isAdmin();
   document.getElementById('matchup-list-container').innerHTML = list.map(m => {
     const mPlayers = (m.michigan||[]).map(id=>state.players[id]?.name||'?').join(' & ');
     const sPlayers = (m.superior||[]).map(id=>state.players[id]?.name||'?').join(' & ');
     const result = getMatchupSummary(m, round);
+    const adminBtns = admin ? `
+      <div style="display:flex;gap:6px;margin-top:8px;" onclick="event.stopPropagation()">
+        <button onclick="editMatchup('${round.id}','${m.id}')" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-weight:700;padding:5px 8px;cursor:pointer;">✏️ Edit</button>
+        <button onclick="deleteMatchup('${round.id}','${m.id}')" style="flex:1;background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);border-radius:6px;color:#e05555;font-size:11px;font-weight:700;padding:5px 8px;cursor:pointer;">🗑 Delete</button>
+      </div>` : '';
     return `
     <div class="matchup-card" onclick="openScorecard('${round.id}','${m.id}')">
       <div class="matchup-vs">
@@ -1647,8 +1654,53 @@ function renderMatchupList(round) {
         <div class="matchup-side superior">${sPlayers||'Superior TBD'}</div>
       </div>
       <div class="matchup-result">${result}</div>
+      ${adminBtns}
     </div>`;
   }).join('');
+}
+
+function deleteMatchup(roundId, matchupId) {
+  if (!isAdmin()) { showToast('🔒 Admin only'); return; }
+  if (!confirm('Delete this matchup? This also removes all its scores.')) return;
+  if (state.matchups[roundId]) {
+    delete state.matchups[roundId][matchupId];
+    save('matchups', state.matchups);
+  }
+  if (state.scores[matchupId]) {
+    delete state.scores[matchupId];
+    save('scores', state.scores);
+  }
+  if (state.completedMatches && state.completedMatches[matchupId]) {
+    delete state.completedMatches[matchupId];
+    save('completedMatches', state.completedMatches);
+  }
+  showToast('Matchup deleted');
+  openRound(roundId);
+}
+
+function editMatchup(roundId, matchupId) {
+  if (!isAdmin()) { showToast('🔒 Admin only'); return; }
+  const matchup = state.matchups[roundId]?.[matchupId];
+  if (!matchup) { showToast('Matchup not found'); return; }
+  // Pre-populate the create matchup form with existing players then open modal
+  editingMatchupRoundId = roundId;
+  editingMatchupId = matchupId; // flag so saveMatchup knows it's an edit
+  showCreateMatchup(roundId);
+  // After modal opens, fill in the existing player selections
+  setTimeout(() => {
+    const round = ROUNDS.find(r => r.id === roundId);
+    const numPerSide = round?.format === 'singles_match' ? 1 : 2;
+    (matchup.michigan||[]).forEach((pid, i) => {
+      const sel = document.getElementById(`m-player-${i}`);
+      if (sel) sel.value = pid;
+    });
+    (matchup.superior||[]).forEach((pid, i) => {
+      const sel = document.getElementById(`s-player-${i}`);
+      if (sel) sel.value = pid;
+    });
+    const saveBtn = document.querySelector('#matchup-modal .btn-primary');
+    if (saveBtn) saveBtn.textContent = 'Update Matchup';
+  }, 50);
 }
 
 function getMatchupSummary(matchup, round) {
@@ -2708,9 +2760,10 @@ function updateLocationToggleBtn() {
 }
 
 // Matchup creation
-function showCreateMatchup() {
-  const round = ROUNDS.find(r=>r.id===currentRoundId);
-  editingMatchupRoundId = currentRoundId;
+function showCreateMatchup(roundIdOverride) {
+  const round = ROUNDS.find(r=>r.id===(roundIdOverride||currentRoundId));
+  editingMatchupRoundId = roundIdOverride || currentRoundId;
+  if (!roundIdOverride) editingMatchupId = null; // fresh create clears edit state
   const isSingles = round.format === 'singles_match';
   const isStableford = round.format === 'stableford';
 
@@ -2767,13 +2820,15 @@ function saveMatchup() {
     showToast('Select at least one player per team'); return;
   }
 
-  const id = genId();
+  const id = editingMatchupId || genId();
   if (!state.matchups[editingMatchupRoundId]) state.matchups[editingMatchupRoundId] = {};
   state.matchups[editingMatchupRoundId][id] = { id, michigan:michPlayers, superior:supPlayers };
   save('matchups', state.matchups);
+  const wasEdit = !!editingMatchupId;
+  editingMatchupId = null;
   closeModal('matchup-modal');
   openRound(editingMatchupRoundId);
-  showToast('✅ Matchup created');
+  showToast(wasEdit ? '✅ Matchup updated' : '✅ Matchup created');
 }
 
 // ═══════════════════════════════════════════════════
@@ -3800,7 +3855,7 @@ const GLI_PASSWORD = 'greatlakes';
 // username (first.last) -> { playerId, admin }
 const USER_LOGINS = {
   'dave.dettmer':    { playerId:'cap_michigan',  admin:true  },
-  'john.wade':       { playerId:'cap_superior',  admin:true  },
+  'john.wade':       { playerId:'cap_superior',  admin:false },
   'doug.barrow':     { playerId:'commissioner',  admin:true  },
   'brandyn.harris':  { playerId:'p03', admin:false },
   'tj.bradley':      { playerId:'p04', admin:false },

@@ -386,9 +386,10 @@ input,textarea{font-family:inherit;outline:none;}
 .mb-vs{font-size:11px;color:var(--text3);font-weight:700;flex-shrink:0;}
 
 /* ── LOGIN SCREEN ─────────────────────────────────── */
-#role-gate{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
+#role-gate{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;background:#050505;}
+#role-gate-bg{position:absolute;inset:0;background:url('login-bg.jpg') center center/cover no-repeat;opacity:.28;filter:saturate(1.4);pointer-events:none;}
 .lg-logo{margin-bottom:16px;}
-.lg-form{width:100%;max-width:340px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+.lg-form{position:relative;z-index:1;width:100%;max-width:340px;background:rgba(10,10,10,.82);border:1px solid var(--border);border-radius:var(--radius);padding:24px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 8px 40px rgba(0,0,0,.7);}
 .lg-form-title{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:16px;}
 .lg-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:5px;display:block;}
 .lg-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-size:14px;margin-bottom:12px;}
@@ -414,54 +415,15 @@ input,textarea{font-family:inherit;outline:none;}
 
 <!-- LOGIN SCREEN -->
 <div id="role-gate">
-  <div class="lg-logo">
-    <!-- Great Lakes Invitational badge SVG -->
-    <svg viewBox="0 0 200 200" width="160" height="160" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <path id="topArc" d="M 14,100 A 86,86 0 0,1 186,100"/>
-        <path id="botArc" d="M 16,100 A 84,84 0 0,0 184,100"/>
-        <clipPath id="cClip"><circle cx="100" cy="100" r="84"/></clipPath>
-      </defs>
-      <!-- Background -->
-      <circle cx="100" cy="100" r="99" fill="#050505"/>
-      <!-- Outer rings -->
-      <circle cx="100" cy="100" r="97" fill="none" stroke="white" stroke-width="3"/>
-      <circle cx="100" cy="100" r="74" fill="none" stroke="white" stroke-width="1.5"/>
-      <!-- 1ST ANNUAL top arc -->
-      <text font-family="Arial Black,Arial,sans-serif" font-size="11" font-weight="900" fill="white" letter-spacing="2.5">
-        <textPath href="#topArc" startOffset="50%" text-anchor="middle">· 1ST ANNUAL ·</textPath>
-      </text>
-      <!-- GL big italic letters -->
-      <text x="100" y="90" text-anchor="middle" fill="white" font-family="Arial Black,Arial,sans-serif" font-size="58" font-weight="900" font-style="italic" letter-spacing="-4">GL</text>
-      <!-- Pine trees left -->
-      <g fill="white">
-        <polygon points="26,128 32,112 38,128"/>
-        <polygon points="23,140 32,118 41,140"/>
-        <rect x="29" y="140" width="6" height="7"/>
-      </g>
-      <!-- Pine trees right -->
-      <g fill="white">
-        <polygon points="162,128 168,112 174,128"/>
-        <polygon points="159,140 168,118 177,140"/>
-        <rect x="165" y="140" width="6" height="7"/>
-      </g>
-      <!-- Water silhouette -->
-      <path d="M 28,148 Q 50,143 70,148 Q 90,153 100,148 Q 115,143 130,148 Q 150,153 172,148 L 172,157 Q 150,152 130,157 Q 110,162 100,157 Q 85,152 70,157 Q 50,162 28,157 Z" fill="white" opacity="0.35" clip-path="url(#cClip)"/>
-      <!-- GREAT LAKES white band -->
-      <rect x="14" y="94" width="172" height="38" fill="white" clip-path="url(#cClip)"/>
-      <text x="100" y="120" text-anchor="middle" fill="#050505" font-family="Arial Black,Arial,sans-serif" font-size="17" font-weight="900" letter-spacing="2">GREAT LAKES</text>
-      <!-- INVITATIONAL bottom arc -->
-      <text font-family="Arial Black,Arial,sans-serif" font-size="10.5" font-weight="900" fill="white" letter-spacing="2">
-        <textPath href="#botArc" startOffset="50%" text-anchor="middle">INVITATIONAL</textPath>
-      </text>
-      <!-- 2026 -->
-      <text x="100" y="178" text-anchor="middle" fill="white" font-family="Arial Black,Arial,sans-serif" font-size="12" font-weight="900" letter-spacing="4">2026</text>
-      <line x1="64" y1="172" x2="79" y2="172" stroke="white" stroke-width="1.5"/>
-      <line x1="121" y1="172" x2="136" y2="172" stroke="white" stroke-width="1.5"/>
-    </svg>
-  </div>
+  <div id="role-gate-bg"></div>
 
   <div class="lg-form">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);opacity:.7;">1st Annual</div>
+      <div style="font-size:18px;font-weight:900;letter-spacing:1px;color:#fff;line-height:1.2;">GREAT LAKES<br>INVITATIONAL</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);margin-top:4px;">2026</div>
+    </div>
+    <div class="divider" style="margin:0 0 14px;"></div>
     <div class="lg-form-title">Sign In</div>
     <label class="lg-label" for="login-username">Username</label>
     <input class="lg-input" id="login-username" type="text" placeholder="first.last" autocomplete="username" autocapitalize="none"

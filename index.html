@@ -622,6 +622,9 @@ input,textarea{font-family:inherit;outline:none;}
         <input type="text" id="new-player-name" placeholder="Add player name…" onkeydown="if(event.key==='Enter')addPlayer()">
         <button class="btn btn-primary" onclick="addPlayer()">Add</button>
       </div>
+      <div id="seed-players-bar" style="display:none;margin-bottom:10px;">
+        <button class="btn btn-ghost btn-full" style="border-color:var(--gold);color:var(--gold);font-size:12px;" onclick="seedPlayerProfiles()">🌱 Load Player Profiles</button>
+      </div>
       <div class="roster-tabs">
         <div class="roster-tab active-all" onclick="filterRoster('all')">All <span id="rt-all-count"></span></div>
         <div class="roster-tab" onclick="filterRoster('michigan')">🟢 Michigan <span id="rt-m-count"></span></div>
@@ -937,6 +940,17 @@ input,textarea{font-family:inherit;outline:none;}
   <div class="modal">
     <div class="modal-title" id="player-modal-title">Edit Player</div>
     <input class="modal-input" id="player-edit-name" type="text" placeholder="Player name">
+    <input class="modal-input" id="player-edit-nickname" type="text" placeholder='Nickname (e.g. "Woody")' style="margin-top:-4px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <input class="modal-input" id="player-edit-phone" type="tel" placeholder="Phone (digits only)" style="margin-bottom:0;">
+      <input class="modal-input" id="player-edit-venmo" type="text" placeholder="Venmo @handle" style="margin-bottom:0;">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <input class="modal-input" id="player-edit-hometown" type="text" placeholder="Hometown" style="margin-bottom:0;">
+      <input class="modal-input" id="player-edit-handicap" type="text" placeholder="Handicap" style="margin-bottom:0;">
+    </div>
+    <input class="modal-input" id="player-edit-walkup" type="text" placeholder="Walk-up song — Title - Artist">
+    <input class="modal-input" id="player-edit-course" type="text" placeholder="Fav course song — Title - Artist">
     <div class="photo-input" style="align-items:center;gap:12px;">
       <div id="player-photo-preview" style="width:52px;height:70px;border-radius:8px;background:var(--bg3);border:2px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3);">📷</div>
       <div style="flex:1;">
@@ -1272,6 +1286,8 @@ function showPlayerProfile(playerId) {
     p.handicap != null ? `<div class="ppv-row"><span>⛳</span><div><div class="ppv-label">Handicap</div><div class="ppv-val">${p.handicap}</div></div></div>` : '',
     p.phone      ? `<div class="ppv-row"><span>📱</span><div><div class="ppv-label">Phone</div><a href="tel:${p.phone}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">${p.phone}</a></div></div>` : '',
     p.venmoId    ? `<div class="ppv-row"><span>💸</span><div><div class="ppv-label">Venmo</div><a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">@${p.venmoId}</a></div></div>` : '',
+    p.walkupSong ? `<div class="ppv-row"><span>🎤</span><div><div class="ppv-label">Walk-up Song</div><div class="ppv-val" style="font-size:13px;">${p.walkupSong}</div></div></div>` : '',
+    p.courseSong ? `<div class="ppv-row"><span>🎵</span><div><div class="ppv-label">On the Course</div><div class="ppv-val" style="font-size:13px;">${p.courseSong}</div></div></div>` : '',
   ].filter(Boolean).join('');
 
   document.getElementById('ppv-fields').innerHTML = fields ||
@@ -1396,6 +1412,13 @@ function openPlayerEdit(id) {
   if (!p) return;
   document.getElementById('player-edit-id').value = id;
   document.getElementById('player-edit-name').value = p.name;
+  document.getElementById('player-edit-nickname').value = p.nickname||'';
+  document.getElementById('player-edit-phone').value = p.phone||'';
+  document.getElementById('player-edit-venmo').value = p.venmoId ? '@'+p.venmoId : '';
+  document.getElementById('player-edit-hometown').value = p.hometown||'';
+  document.getElementById('player-edit-handicap').value = p.handicap!=null ? p.handicap : '';
+  document.getElementById('player-edit-walkup').value = p.walkupSong||'';
+  document.getElementById('player-edit-course').value = p.courseSong||'';
   document.getElementById('player-edit-photo').value = p.photoUrl||'';
   document.getElementById('player-modal-title').textContent = 'Edit ' + p.name;
   document.getElementById('player-photo-status').textContent = '';
@@ -1442,9 +1465,17 @@ function savePlayerEdit(team) {
   const id = document.getElementById('player-edit-id').value;
   if (!state.players[id]) return;
   const name = document.getElementById('player-edit-name').value.trim();
-  const photo = document.getElementById('player-edit-photo').value.trim();
   if (name) state.players[id].name = name;
-  state.players[id].photoUrl = photo;
+  state.players[id].nickname = document.getElementById('player-edit-nickname').value.trim();
+  state.players[id].phone = document.getElementById('player-edit-phone').value.trim().replace(/\D/g,'');
+  const venmoRaw = document.getElementById('player-edit-venmo').value.trim().replace(/^@/,'');
+  state.players[id].venmoId = venmoRaw;
+  state.players[id].hometown = document.getElementById('player-edit-hometown').value.trim();
+  const hcp = parseFloat(document.getElementById('player-edit-handicap').value);
+  state.players[id].handicap = isNaN(hcp) ? null : hcp;
+  state.players[id].walkupSong = document.getElementById('player-edit-walkup').value.trim();
+  state.players[id].courseSong = document.getElementById('player-edit-course').value.trim();
+  state.players[id].photoUrl = document.getElementById('player-edit-photo').value.trim();
   state.players[id].team = team;
   save('players', state.players);
   closeModal('player-modal');
@@ -1459,6 +1490,44 @@ function deletePlayer() {
   save('players', state.players);
   closeModal('player-modal');
   renderRosters();
+}
+
+// ── Seed player profiles ───────────────────────────────────────────────────────
+const SEED_PLAYERS = [
+  { name:'Adam Woodbury',       nickname:'Woody',         phone:'5173882709', hometown:'Olivet, MI',          handicap:7,    venmoId:'Adam-Woodbury-5',  walkupSong:'Shook Ones Pt. II - Mobb Deep',         courseSong:'Take Me Home, Country Roads - John Denver' },
+  { name:'Liam Hults',          nickname:'Leelee',        phone:'8477156645', hometown:'Chicago, IL',          handicap:12.4, venmoId:'Liam-Hults',        walkupSong:'Set It Off - Lil Boosie',               courseSong:'Who Run It - Three 6 Mafia' },
+  { name:'John Wade',           nickname:'The Duke',      phone:'',           hometown:'',                     handicap:null, venmoId:'John-Wade-2',       walkupSong:'The Boss - James Brown',                courseSong:'BigXThaPlug · JUNGLE · TI · 50 Cent · Red Clay Strays · The Creekers' },
+  { name:'Greyson Hurt',        nickname:'G-Money',       phone:'5403033775', hometown:'Winchester, VA',       handicap:8.7,  venmoId:'Greyson-Hurt',      walkupSong:'Real American - Rick Derringer',        courseSong:'Dosas and Mimosas - Cherub' },
+  { name:'Eric Jackowski',      nickname:'Polish Hammer', phone:'5862068182', hometown:'Mt. Clemens, MI',      handicap:24,   venmoId:'Eric-Jackowski',    walkupSong:'Tokyo Drift - Teriyaki Boyz',            courseSong:'Beautiful - Akon' },
+  { name:'Christopher Morehouse',nickname:'MoHouse',      phone:'5862432708', hometown:'Rochester, MI',        handicap:25,   venmoId:'Chris-Morehouse-6', walkupSong:'Flower - Moby',                         courseSong:'Good Time - Alan Jackson' },
+  { name:'Justin Blazo',        nickname:'Blazo',         phone:'7343301712', hometown:'',                     handicap:17,   venmoId:'',                  walkupSong:'OMG - Usher',                           courseSong:'' },
+  { name:'Jonathan Ellsworth',  nickname:'pawdad',        phone:'9288928177', hometown:'Show Low, AZ',         handicap:15,   venmoId:'Lee-Ellsworth',     walkupSong:"I'm a Dog - Stephan Wilson Jr.",        courseSong:'The Stroke - Billy Squier' },
+  { name:'Zach Janik',          nickname:'THE Viking',    phone:'4102418277', hometown:'Sparks Glencoe, MD',   handicap:22,   venmoId:'zmjanik',           walkupSong:'Valhalla Calling - Miracle of Sound',   courseSong:'' }
+];
+
+function seedPlayerProfiles() {
+  if (!isAdmin()) { showToast('🔒 Admin only'); return; }
+  const existing = Object.values(state.players).map(p => p.name.toLowerCase());
+  let added = 0;
+  SEED_PLAYERS.forEach(data => {
+    if (existing.includes(data.name.toLowerCase())) {
+      // Update existing player with profile data (don't overwrite team/photo)
+      const match = Object.values(state.players).find(p => p.name.toLowerCase() === data.name.toLowerCase());
+      if (match) {
+        Object.assign(match, { nickname:data.nickname, phone:data.phone, hometown:data.hometown,
+          handicap:data.handicap, venmoId:data.venmoId, walkupSong:data.walkupSong, courseSong:data.courseSong });
+        added++;
+      }
+      return;
+    }
+    const id = genId();
+    state.players[id] = { id, team:'unassigned', photoUrl:'', role:'', ...data };
+    added++;
+  });
+  if (added === 0) { showToast('Nothing to update'); return; }
+  save('players', state.players);
+  renderRosters();
+  showToast(`✅ Updated ${added} player profile${added===1?'':'s'}`);
 }
 
 function renderRosters() {
@@ -1489,6 +1558,10 @@ function renderRosters() {
     if ((a.team||'unassigned') > (b.team||'unassigned')) return 1;
     return a.name.localeCompare(b.name);
   });
+
+  // Show/hide seed button for admins
+  const seedBar = document.getElementById('seed-players-bar');
+  if (seedBar) seedBar.style.display = isAdmin() ? '' : 'none';
 
   container.innerHTML = filtered.map(p => {
     const team = p.team || 'unassigned';

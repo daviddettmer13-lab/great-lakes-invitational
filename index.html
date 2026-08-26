@@ -1157,16 +1157,16 @@ function setupFirebaseListeners() {
     if (v) { state.players = v; applyRosterMigration(); renderRosters(); updateHeaderScores(); renderLeaderboard(); updateHeaderAvatar(); }
   });
   firebaseDb.ref('gli26/matchups').on('value', snap => {
-    const v = snap.val();
-    if (v) {
+    { // a deleted key arrives as null — treat it as empty, don't keep stale local data
+      const v = snap.val() || {};
       state.matchups = v;
       renderLeaderboard();
       if (appInitialized && currentTab !== 'leaderboard') { leaderboardDirty = true; updateNavBadges(); }
     }
   });
   firebaseDb.ref('gli26/scores').on('value', snap => {
-    const v = snap.val();
-    if (v) {
+    {
+      const v = snap.val() || {};
       state.scores = v;
       updateHeaderScores();
       renderLeaderboard();
@@ -1175,8 +1175,8 @@ function setupFirebaseListeners() {
     }
   });
   firebaseDb.ref('gli26/ctp').on('value', snap => {
-    const v = snap.val();
-    if (v) {
+    {
+      const v = snap.val() || {};
       state.ctp = v;
       updateHeaderScores();
       renderLeaderboard();
@@ -1184,9 +1184,10 @@ function setupFirebaseListeners() {
     }
   });
   firebaseDb.ref('gli26/messages').on('value', snap => {
-    const v = snap.val();
-    if (v) {
-      if (Array.isArray(v)) state.messages = v.filter(Boolean);
+    {
+      const v = snap.val();
+      if (!v) state.messages = [];
+      else if (Array.isArray(v)) state.messages = v.filter(Boolean);
       else state.messages = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
       if (appInitialized && currentTab !== 'chat') {
@@ -1197,9 +1198,10 @@ function setupFirebaseListeners() {
     }
   });
   firebaseDb.ref('gli26/bets').on('value', snap => {
-    const v = snap.val();
-    if (v) {
-      if (Array.isArray(v)) state.bets = v.filter(Boolean);
+    {
+      const v = snap.val();
+      if (!v) state.bets = [];
+      else if (Array.isArray(v)) state.bets = v.filter(Boolean);
       else state.bets = Object.values(v).sort((a,b)=>a.ts-b.ts);
       renderChat();
       if (appInitialized && currentTab !== 'chat') {
@@ -1210,8 +1212,8 @@ function setupFirebaseListeners() {
     }
   });
   firebaseDb.ref('gli26/completedMatches').on('value', snap => {
-    const v = snap.val();
-    if (v) {
+    {
+      const v = snap.val() || {};
       state.completedMatches = v;
       renderLeaderboard();
       refreshActiveScorecardIfOpen();

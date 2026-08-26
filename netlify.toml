@@ -1,0 +1,43 @@
+# Netlify configuration for the GLI app.
+#
+# The whole point of moving here: GitHub Pages hard-codes Cache-Control:
+# max-age=600 on HTML, so a deploy stays invisible to open phones for up
+# to ten minutes. These headers make a deploy visible on next load.
+
+[build]
+  publish = "."
+
+# HTML must always revalidate — this is the cache fix.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Images are content-addressed by name and only change when a portrait is
+# replaced, so they can cache hard.
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Single page app — any unmatched path serves the app rather than 404.html,
+# which is hard-coded to redirect back to GitHub Pages.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

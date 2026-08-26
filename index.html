@@ -893,7 +893,7 @@ input,textarea{font-family:inherit;outline:none;}
       <div id="pf-name" style="font-size:20px;font-weight:800;color:var(--text);"></div>
       <div style="font-size:12px;color:var(--gold);margin-top:4px;letter-spacing:.5px;">COMPLETE YOUR PLAYER PROFILE</div>
     </div>
-    <input class="modal-input" id="pf-nickname" placeholder="Nickname (optional — e.g. Big Cat)">
+    <input class="modal-input" id="pf-nickname" placeholder="Nickname (optional — e.g. BIG CAT)">
     <input class="modal-input" id="pf-phone" type="tel" placeholder="📱 Phone Number *">
     <input class="modal-input" id="pf-hometown" placeholder="🏡 Hometown *">
     <input class="modal-input" id="pf-handicap" type="number" step="0.1" min="-10" max="54" placeholder="⛳ Handicap Index (e.g. 8.4)">
@@ -940,7 +940,7 @@ input,textarea{font-family:inherit;outline:none;}
   <div class="modal">
     <div class="modal-title" id="player-modal-title">Edit Player</div>
     <input class="modal-input" id="player-edit-name" type="text" placeholder="Player name">
-    <input class="modal-input" id="player-edit-nickname" type="text" placeholder='Nickname (e.g. "Woody")' style="margin-top:-4px;">
+    <input class="modal-input" id="player-edit-nickname" type="text" placeholder='Nickname (e.g. "WOODY")' style="margin-top:-4px;">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
       <input class="modal-input" id="player-edit-phone" type="tel" placeholder="Phone (digits only)" style="margin-bottom:0;">
       <input class="modal-input" id="player-edit-venmo" type="text" placeholder="Venmo @handle" style="margin-bottom:0;">
@@ -1124,7 +1124,7 @@ function setupFirebaseListeners() {
   if (!firebaseDb) return;
   firebaseDb.ref('gli26/players').on('value', snap => {
     const v = snap.val();
-    if (v) { state.players = v; renderRosters(); updateHeaderScores(); renderLeaderboard(); updateHeaderAvatar(); }
+    if (v) { state.players = v; applyRosterMigration(); renderRosters(); updateHeaderScores(); renderLeaderboard(); updateHeaderAvatar(); }
   });
   firebaseDb.ref('gli26/matchups').on('value', snap => {
     const v = snap.val();
@@ -1194,6 +1194,55 @@ function setupFirebaseListeners() {
 // PLAYER PROFILES
 // ═══════════════════════════════════════════════════
 
+// ── Roster changes ────────────────────────────────────────────────────────────
+// Brandon Day, Drew Clarkson & Cayman Elkin replace TJ Bradley (p04),
+// LJ Pijnenburg (p06) & Aaron Engwis (p08).
+// Bump ROSTER_VERSION whenever the two lists below change, so the swap gets
+// re-applied to the live Firebase roster on each admin's next load.
+const ROSTER_VERSION = 2;
+const ROSTER_REMOVALS = ['p04', 'p06', 'p08']; // TJ Bradley, LJ Pijnenburg, Aaron Engwis
+const ROSTER_ADDITIONS = [
+  { id:'p20', name:'Brandon Day',   team:'unassigned', photoUrl:'https://daviddettmer13-lab.github.io/great-lakes-invitational/brandon-day.png', role:'',
+    nickname:'BRANDO',  phone:'5174998846', hometown:'Springport, MI', handicap:4.5,  venmoId:'',
+    walkupSong:'For Whom the Bell Tolls - Metallica', courseSong:'Prey - Parkway Drive',
+    profileComplete:true },
+  { id:'p21', name:'Drew Clarkson', team:'unassigned', photoUrl:'https://daviddettmer13-lab.github.io/great-lakes-invitational/drew-clarkson.png', role:'',
+    nickname:'DREWSKI', phone:'2489785519', hometown:'Waterford, MI',  handicap:null, venmoId:'',
+    walkupSong:'All Summer Long - Kid Rock', courseSong:'',
+    profileComplete:false },
+  { id:'p22', name:'Cayman Elkin',  team:'unassigned', photoUrl:'https://daviddettmer13-lab.github.io/great-lakes-invitational/cayman-elkin.png', role:'',
+    nickname:'CAY',     phone:'9496776231', hometown:'Laguna Beach, CA', handicap:20.1, venmoId:'Cayman-Elkin',
+    walkupSong:'Big Dawgs - Hanumankind', courseSong:'Blackout - Sublime With Rome',
+    profileComplete:true },
+];
+
+// Applies the roster swap to the roster currently in state. Idempotent — it only
+// writes when something actually needs changing, so re-running against an
+// already-migrated roster is a no-op. Admin-only so 20 clients don't race to
+// write the same object. Only called once real data is loaded (the Firebase
+// snapshot, or login) — never at init, where the remote listener would clobber it.
+function applyRosterMigration() {
+  if (!isAdmin()) return false;
+  if (localStorage.getItem('gli26_rosterVersion') === String(ROSTER_VERSION)) return false;
+  if (!state.players || !Object.keys(state.players).length) return false;
+
+  let changed = false;
+  ROSTER_REMOVALS.forEach(id => {
+    if (state.players[id]) { delete state.players[id]; changed = true; }
+  });
+  const names = Object.values(state.players).map(p => (p.name || '').toLowerCase());
+  ROSTER_ADDITIONS.forEach(np => {
+    if (!state.players[np.id] && !names.includes(np.name.toLowerCase())) {
+      state.players[np.id] = Object.assign({}, np);
+      changed = true;
+    }
+  });
+
+  localStorage.setItem('gli26_rosterVersion', String(ROSTER_VERSION));
+  if (changed) { save('players', state.players); showToast('✅ Roster updated'); }
+  return changed;
+}
+
 const PROFILE_VERSION = 2; // bump to force everyone to re-login & fill profile
 
 function checkProfileVersion() {
@@ -1242,7 +1291,7 @@ function savePlayerProfile() {
 
   const p = state.players[currentUser.id];
   if (!p) return;
-  p.nickname   = document.getElementById('pf-nickname').value.trim();
+  p.nickname   = document.getElementById('pf-nickname').value.trim().toUpperCase();
   p.phone      = phone;
   p.hometown   = hometown;
   p.handicap   = parseFloat(document.getElementById('pf-handicap').value) || null;
@@ -1466,7 +1515,7 @@ function savePlayerEdit(team) {
   if (!state.players[id]) return;
   const name = document.getElementById('player-edit-name').value.trim();
   if (name) state.players[id].name = name;
-  state.players[id].nickname = document.getElementById('player-edit-nickname').value.trim();
+  state.players[id].nickname = document.getElementById('player-edit-nickname').value.trim().toUpperCase();
   state.players[id].phone = document.getElementById('player-edit-phone').value.trim().replace(/\D/g,'');
   const venmoRaw = document.getElementById('player-edit-venmo').value.trim().replace(/^@/,'');
   state.players[id].venmoId = venmoRaw;
@@ -1494,15 +1543,15 @@ function deletePlayer() {
 
 // ── Seed player profiles ───────────────────────────────────────────────────────
 const SEED_PLAYERS = [
-  { name:'Adam Woodbury',       nickname:'Woody',         phone:'5173882709', hometown:'Olivet, MI',          handicap:7,    venmoId:'Adam-Woodbury-5',  walkupSong:'Shook Ones Pt. II - Mobb Deep',         courseSong:'Take Me Home, Country Roads - John Denver' },
-  { name:'Liam Hults',          nickname:'Leelee',        phone:'8477156645', hometown:'Chicago, IL',          handicap:12.4, venmoId:'Liam-Hults',        walkupSong:'Set It Off - Lil Boosie',               courseSong:'Who Run It - Three 6 Mafia' },
-  { name:'John Wade',           nickname:'The Duke',      phone:'',           hometown:'',                     handicap:null, venmoId:'John-Wade-2',       walkupSong:'The Boss - James Brown',                courseSong:'BigXThaPlug · JUNGLE · TI · 50 Cent · Red Clay Strays · The Creekers' },
-  { name:'Greyson Hurt',        nickname:'G-Money',       phone:'5403033775', hometown:'Winchester, VA',       handicap:8.7,  venmoId:'Greyson-Hurt',      walkupSong:'Real American - Rick Derringer',        courseSong:'Dosas and Mimosas - Cherub' },
-  { name:'Eric Jackowski',      nickname:'Polish Hammer', phone:'5862068182', hometown:'Mt. Clemens, MI',      handicap:24,   venmoId:'Eric-Jackowski',    walkupSong:'Tokyo Drift - Teriyaki Boyz',            courseSong:'Beautiful - Akon' },
-  { name:'Christopher Morehouse',nickname:'MoHouse',      phone:'5862432708', hometown:'Rochester, MI',        handicap:25,   venmoId:'Chris-Morehouse-6', walkupSong:'Flower - Moby',                         courseSong:'Good Time - Alan Jackson' },
-  { name:'Justin Blazo',        nickname:'Blazo',         phone:'7343301712', hometown:'',                     handicap:17,   venmoId:'',                  walkupSong:'OMG - Usher',                           courseSong:'' },
-  { name:'Jonathan Ellsworth',  nickname:'pawdad',        phone:'9288928177', hometown:'Show Low, AZ',         handicap:15,   venmoId:'Lee-Ellsworth',     walkupSong:"I'm a Dog - Stephan Wilson Jr.",        courseSong:'The Stroke - Billy Squier' },
-  { name:'Zach Janik',          nickname:'THE Viking',    phone:'4102418277', hometown:'Sparks Glencoe, MD',   handicap:22,   venmoId:'zmjanik',           walkupSong:'Valhalla Calling - Miracle of Sound',   courseSong:'' }
+  { name:'Adam Woodbury',       nickname:'WOODY',         phone:'5173882709', hometown:'Olivet, MI',          handicap:7,    venmoId:'Adam-Woodbury-5',  walkupSong:'Shook Ones Pt. II - Mobb Deep',         courseSong:'Take Me Home, Country Roads - John Denver' },
+  { name:'Liam Hults',          nickname:'LEELEE',        phone:'8477156645', hometown:'Chicago, IL',          handicap:12.4, venmoId:'Liam-Hults',        walkupSong:'Set It Off - Lil Boosie',               courseSong:'Who Run It - Three 6 Mafia' },
+  { name:'John Wade',           nickname:'THE DUKE',      phone:'',           hometown:'',                     handicap:null, venmoId:'John-Wade-2',       walkupSong:'The Boss - James Brown',                courseSong:'BigXThaPlug · JUNGLE · TI · 50 Cent · Red Clay Strays · The Creekers' },
+  { name:'Greyson Hurt',        nickname:'G-MONEY',       phone:'5403033775', hometown:'Winchester, VA',       handicap:8.7,  venmoId:'Greyson-Hurt',      walkupSong:'Real American - Rick Derringer',        courseSong:'Dosas and Mimosas - Cherub' },
+  { name:'Eric Jackowski',      nickname:'POLISH HAMMER', phone:'5862068182', hometown:'Mt. Clemens, MI',      handicap:24,   venmoId:'Eric-Jackowski',    walkupSong:'Tokyo Drift - Teriyaki Boyz',            courseSong:'Beautiful - Akon' },
+  { name:'Chris Morehouse',nickname:'MOHOUSE',      phone:'5862432708', hometown:'Rochester, MI',        handicap:25,   venmoId:'Chris-Morehouse-6', walkupSong:'Flower - Moby',                         courseSong:'Good Time - Alan Jackson' },
+  { name:'Justin Blazo',        nickname:'BLAZO',         phone:'7343301712', hometown:'',                     handicap:17,   venmoId:'',                  walkupSong:'OMG - Usher',                           courseSong:'' },
+  { name:'Lee Ellsworth',  nickname:'PAWDAD',        phone:'9288928177', hometown:'Show Low, AZ',         handicap:15,   venmoId:'Lee-Ellsworth',     walkupSong:"I'm a Dog - Stephan Wilson Jr.",        courseSong:'The Stroke - Billy Squier' },
+  { name:'Zach Janik',          nickname:'THE VIKING',    phone:'4102418277', hometown:'Sparks Glencoe, MD',   handicap:22,   venmoId:'zmjanik',           walkupSong:'Valhalla Calling - Miracle of Sound',   courseSong:'' }
 ];
 
 function seedPlayerProfiles() {
@@ -3933,11 +3982,8 @@ const USER_LOGINS = {
   'john.wade':       { playerId:'cap_superior',  admin:false },
   'doug.barrow':     { playerId:'commissioner',  admin:true  },
   'brandyn.harris':  { playerId:'p03', admin:false },
-  'tj.bradley':      { playerId:'p04', admin:false },
   'justin.blazo':    { playerId:'p05', admin:false },
-  'lj.pijnenburg':   { playerId:'p06', admin:false },
   'lee.ellsworth':   { playerId:'p07', admin:false },
-  'aaron.engwis':    { playerId:'p08', admin:false },
   'nick.smigielski': { playerId:'p09', admin:false },
   'adam.woodbury':   { playerId:'p10', admin:false },
   'cy.mills':        { playerId:'p11', admin:false },
@@ -3949,6 +3995,9 @@ const USER_LOGINS = {
   'chris.morehouse': { playerId:'p17', admin:false },
   'colin.denton':    { playerId:'p18', admin:false },
   'brad.mangune':    { playerId:'p19', admin:false },
+  'brandon.day':     { playerId:'p20', admin:false },
+  'drew.clarkson':   { playerId:'p21', admin:false },
+  'cayman.elkin':    { playerId:'p22', admin:false },
 };
 
 let appRole = 'player'; // 'admin' | 'player'
@@ -3988,6 +4037,7 @@ function attemptLogin() {
   updatePermissions();
   updateChatUserLabel();
   updateHeaderAvatar();
+  if (applyRosterMigration()) renderRosters();
   showToast('👋 Welcome, ' + (playerData ? playerData.name : username) + '!');
   setTimeout(showProfileFormIfNeeded, 400);
 }
@@ -4090,11 +4140,8 @@ function initDefaultPlayers() {
     { id: 'cap_superior',  name: 'John Wade',        team: 'superior',    photoUrl: '', role: 'Captain' },
     { id: 'commissioner',  name: 'Doug Barrow',      team: 'unassigned',  photoUrl: '', role: 'Commissioner' },
     { id: 'p03',           name: 'Brandyn Harris',   team: 'unassigned',  photoUrl: '', role: '' },
-    { id: 'p04',           name: 'TJ Bradley',       team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p05',           name: 'Justin Blazo',     team: 'unassigned',  photoUrl: '', role: '' },
-    { id: 'p06',           name: 'LJ Pijnenburg',    team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p07',           name: 'Lee Ellsworth',    team: 'unassigned',  photoUrl: '', role: '' },
-    { id: 'p08',           name: 'Aaron Engwis',     team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p09',           name: 'Nick Smigielski',  team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p10',           name: 'Adam Woodbury',    team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p11',           name: 'Cy Mills',         team: 'unassigned',  photoUrl: '', role: '' },
@@ -4106,6 +4153,7 @@ function initDefaultPlayers() {
     { id: 'p17',           name: 'Chris Morehouse',  team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p18',           name: 'Colin Denton',     team: 'unassigned',  photoUrl: '', role: '' },
     { id: 'p19',           name: 'Brad Mangune',     team: 'unassigned',  photoUrl: '', role: '' },
+    ...ROSTER_ADDITIONS,
   ];
   defaults.forEach(p => { state.players[p.id] = p; });
   save('players', state.players);

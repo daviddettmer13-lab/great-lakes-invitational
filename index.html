@@ -358,6 +358,15 @@ input,textarea{font-family:inherit;outline:none;}
 .modal-overlay.active{display:flex;}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-height:85vh;overflow-y:auto;}
 .modal-title{font-size:17px;font-weight:800;margin-bottom:16px;text-align:center;}
+.pl-open{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.pl-open a{display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 12px;
+ border-radius:12px;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.3px;
+ border:1px solid;}
+.pl-open a.am{color:#FA5C74;border-color:rgba(250,92,116,.45);background:rgba(250,92,116,.09);}
+.pl-open a.sp{color:#1DB954;border-color:rgba(29,185,84,.45);background:rgba(29,185,84,.09);}
+.pl-open a:active{opacity:.7;}
+.pl-divider{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--text3);
+ text-align:center;margin:2px 0 10px;}
 .pl-row{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--border);}
 .pl-row:last-child{border-bottom:none;}
 .pl-num{font-size:11px;color:var(--text3);width:20px;flex-shrink:0;font-variant-numeric:tabular-nums;}
@@ -4092,7 +4101,13 @@ function updateHeaderAvatar() {
   }
 }
 
-// Walk-up playlist — built from the live roster, linked out to Apple Music and Spotify
+// Walk-up playlist — built from the live roster, linked out to Apple Music and Spotify.
+// Fill these in with a shared playlist link to show a one-tap "open the whole thing" button.
+const PLAYLIST_LINKS = {
+  apple:   'https://music.apple.com/us/playlist/gli-2026/pl.u-9N9LX73Fx8MaEGq',
+  spotify: ''
+};
+
 function openWalkupPlaylist() {
   const tracks = Object.values(state.players)
     .filter(p => p.walkupSong)
@@ -4105,7 +4120,16 @@ function openWalkupPlaylist() {
     return;
   }
 
-  body.innerHTML = tracks.map((p, i) => {
+  const openBtns = [
+    PLAYLIST_LINKS.apple   ? `<a class="am" href="${PLAYLIST_LINKS.apple}" target="_blank" rel="noopener">&#9654;&nbsp; Open in Apple Music</a>` : '',
+    PLAYLIST_LINKS.spotify ? `<a class="sp" href="${PLAYLIST_LINKS.spotify}" target="_blank" rel="noopener">&#9654;&nbsp; Open in Spotify</a>` : ''
+  ].filter(Boolean).join('');
+
+  const header = openBtns
+    ? `<div class="pl-open">${openBtns}</div><div class="pl-divider">or play them one at a time</div>`
+    : '';
+
+  body.innerHTML = header + tracks.map((p, i) => {
     const parts = p.walkupSong.split(' - ');
     const title = parts[0].trim();
     const artist = parts.length > 1 ? parts.slice(1).join(' - ').trim() : '';

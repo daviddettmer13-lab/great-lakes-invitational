@@ -3131,15 +3131,20 @@ function calcAllPoints() {
     if (sSkins) breakdown.push({label:`${round.name} Skins`,m:0,s:sSkins*0.5});
   });
 
-  // CTP — only count entries with a player AND a recorded distance
-  const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId && c.distance && c.team);
+  // CTP — only count entries with a player AND a recorded distance.
+  // Resolve the team from the roster at scoring time rather than trusting the
+  // team stamped on the entry: a CTP recorded before the draft (or before a
+  // player is moved) would otherwise be stuck on 'unassigned' and score nothing.
+  const ctpTeamOf = c => (state.players[c.playerId] && state.players[c.playerId].team) || c.team;
+  const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId && c.distance);
   ctpEntries.forEach(c => {
-    if (c.team==='michigan') mPts+=0.5;
-    else if (c.team==='superior') sPts+=0.5;
+    const t = ctpTeamOf(c);
+    if (t==='michigan') mPts+=0.5;
+    else if (t==='superior') sPts+=0.5;
   });
   if (ctpEntries.length) {
-    const mCtp = ctpEntries.filter(c=>c.team==='michigan').length * 0.5;
-    const sCtp = ctpEntries.filter(c=>c.team==='superior').length * 0.5;
+    const mCtp = ctpEntries.filter(c=>ctpTeamOf(c)==='michigan').length * 0.5;
+    const sCtp = ctpEntries.filter(c=>ctpTeamOf(c)==='superior').length * 0.5;
     if (mCtp) breakdown.push({label:'Closest to Pin',m:mCtp,s:0});
     if (sCtp) breakdown.push({label:'Closest to Pin',m:0,s:sCtp});
   }

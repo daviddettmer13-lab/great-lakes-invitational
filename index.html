@@ -358,6 +358,19 @@ input,textarea{font-family:inherit;outline:none;}
 .modal-overlay.active{display:flex;}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-height:85vh;overflow-y:auto;}
 .modal-title{font-size:17px;font-weight:800;margin-bottom:16px;text-align:center;}
+.pl-row{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--border);}
+.pl-row:last-child{border-bottom:none;}
+.pl-num{font-size:11px;color:var(--text3);width:20px;flex-shrink:0;font-variant-numeric:tabular-nums;}
+.pl-meta{flex:1;min-width:0;}
+.pl-ttl{font-size:14px;font-weight:700;line-height:1.25;}
+.pl-art{font-size:12px;color:var(--text2);}
+.pl-who{font-size:10px;color:var(--text3);letter-spacing:.4px;margin-top:2px;}
+.pl-lnks{display:flex;gap:6px;flex-shrink:0;}
+.pl-svc{font-size:10px;font-weight:700;letter-spacing:.4px;text-decoration:none;padding:6px 9px;
+ border-radius:6px;border:1px solid var(--border);color:var(--text2);white-space:nowrap;}
+.pl-svc.am{color:#FA5C74;border-color:rgba(250,92,116,.4);}
+.pl-svc.sp{color:#1DB954;border-color:rgba(29,185,84,.4);}
+@media(max-width:420px){.pl-row{flex-wrap:wrap;}.pl-lnks{width:100%;padding-left:31px;}}
 .modal-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-size:14px;margin-bottom:10px;}
 .modal-input:focus{border-color:var(--gold);}
 .player-select-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:40vh;overflow-y:auto;}
@@ -804,6 +817,14 @@ input,textarea{font-family:inherit;outline:none;}
 
 <!-- MODALS -->
 <!-- Account Modal -->
+<div class="modal-overlay" id="playlist-modal">
+  <div class="modal">
+    <div class="modal-title">🎧 Walk-Up Songs</div>
+    <div id="playlist-body"></div>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeModal('playlist-modal')">Close</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="user-modal">
   <div class="modal">
     <div class="modal-title">👤 Your Account</div>
@@ -4071,11 +4092,40 @@ function updateHeaderAvatar() {
   }
 }
 
-// Walk-up playlist — every player's first-tee track, linked to Apple Music and Spotify
-const WALKUP_PLAYLIST_URL = 'https://claude.ai/code/artifact/57fdff76-02b4-41ff-9c51-801d8c2d88d5';
-
+// Walk-up playlist — built from the live roster, linked out to Apple Music and Spotify
 function openWalkupPlaylist() {
-  window.open(WALKUP_PLAYLIST_URL, '_blank', 'noopener');
+  const tracks = Object.values(state.players)
+    .filter(p => p.walkupSong)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const body = document.getElementById('playlist-body');
+  if (!tracks.length) {
+    body.innerHTML = '<div class="empty-state">No walk-up songs yet.</div>';
+    showModal('playlist-modal');
+    return;
+  }
+
+  body.innerHTML = tracks.map((p, i) => {
+    const parts = p.walkupSong.split(' - ');
+    const title = parts[0].trim();
+    const artist = parts.length > 1 ? parts.slice(1).join(' - ').trim() : '';
+    const term = encodeURIComponent(title + ' ' + artist);
+    return `
+    <div class="pl-row">
+      <span class="pl-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="pl-meta">
+        <div class="pl-ttl">${escHtml(title)}</div>
+        ${artist ? `<div class="pl-art">${escHtml(artist)}</div>` : ''}
+        <div class="pl-who">${escHtml(p.name)}${p.nickname ? ' &middot; "'+escHtml(p.nickname)+'"' : ''}</div>
+      </span>
+      <span class="pl-lnks">
+        <a class="pl-svc am" href="https://music.apple.com/search?term=${term}" target="_blank" rel="noopener">Apple</a>
+        <a class="pl-svc sp" href="https://open.spotify.com/search/${term}" target="_blank" rel="noopener">Spotify</a>
+      </span>
+    </div>`;
+  }).join('');
+
+  showModal('playlist-modal');
 }
 
 function showUserModal() {

@@ -506,6 +506,10 @@ input,textarea{font-family:inherit;outline:none;}
           <div class="home-tile-circle">🗺️</div>
           <div class="home-tile-label">Map</div>
         </div>
+        <div class="home-tile" onclick="openWalkupPlaylist()">
+          <div class="home-tile-circle">🎧</div>
+          <div class="home-tile-label">Playlist</div>
+        </div>
       </div>
       <!-- Scores strip -->
       <div class="home-scores-strip">
@@ -4065,6 +4069,13 @@ function updateHeaderAvatar() {
     el.style.borderColor = currentUser.team === 'michigan' ? 'var(--michigan)' :
                            currentUser.team === 'superior' ? 'var(--superior)' : 'var(--gold)';
   }
+}
+
+// Walk-up playlist — every player's first-tee track, linked to Apple Music and Spotify
+const WALKUP_PLAYLIST_URL = 'https://claude.ai/code/artifact/57fdff76-02b4-41ff-9c51-801d8c2d88d5';
+
+function openWalkupPlaylist() {
+  window.open(WALKUP_PLAYLIST_URL, '_blank', 'noopener');
 }
 
 function showUserModal() {

@@ -622,9 +622,6 @@ input,textarea{font-family:inherit;outline:none;}
         <input type="text" id="new-player-name" placeholder="Add player name…" onkeydown="if(event.key==='Enter')addPlayer()">
         <button class="btn btn-primary" onclick="addPlayer()">Add</button>
       </div>
-      <div id="seed-players-bar" style="display:none;margin-bottom:10px;">
-        <button class="btn btn-ghost btn-full" style="border-color:var(--gold);color:var(--gold);font-size:12px;" onclick="seedPlayerProfiles()">🌱 Load Player Profiles</button>
-      </div>
       <div class="roster-tabs">
         <div class="roster-tab active-all" onclick="filterRoster('all')">All <span id="rt-all-count"></span></div>
         <div class="roster-tab" onclick="filterRoster('michigan')">🟢 Michigan <span id="rt-m-count"></span></div>
@@ -1207,7 +1204,7 @@ const ROSTER_ADDITIONS = [
     walkupSong:'For Whom the Bell Tolls - Metallica', courseSong:'Prey - Parkway Drive',
     profileComplete:true },
   { id:'p21', name:'Drew Clarkson', team:'unassigned', photoUrl:'https://daviddettmer13-lab.github.io/great-lakes-invitational/drew-clarkson.png', role:'',
-    nickname:'DREWSKI', phone:'2489785519', hometown:'Waterford, MI',  handicap:null, venmoId:'',
+    nickname:'DREWSKI', phone:'2489785519', hometown:'Waterford, MI',  handicap:35,   venmoId:'',
     walkupSong:'All Summer Long - Kid Rock', courseSong:'',
     profileComplete:false },
   { id:'p22', name:'Cayman Elkin',  team:'unassigned', photoUrl:'https://daviddettmer13-lab.github.io/great-lakes-invitational/cayman-elkin.png', role:'',
@@ -1541,44 +1538,6 @@ function deletePlayer() {
   renderRosters();
 }
 
-// ── Seed player profiles ───────────────────────────────────────────────────────
-const SEED_PLAYERS = [
-  { name:'Adam Woodbury',       nickname:'WOODY',         phone:'5173882709', hometown:'Olivet, MI',          handicap:7,    venmoId:'Adam-Woodbury-5',  walkupSong:'Shook Ones Pt. II - Mobb Deep',         courseSong:'Take Me Home, Country Roads - John Denver' },
-  { name:'Liam Hults',          nickname:'LEELEE',        phone:'8477156645', hometown:'Chicago, IL',          handicap:12.4, venmoId:'Liam-Hults',        walkupSong:'Set It Off - Lil Boosie',               courseSong:'Who Run It - Three 6 Mafia' },
-  { name:'John Wade',           nickname:'THE DUKE',      phone:'',           hometown:'',                     handicap:null, venmoId:'John-Wade-2',       walkupSong:'The Boss - James Brown',                courseSong:'BigXThaPlug · JUNGLE · TI · 50 Cent · Red Clay Strays · The Creekers' },
-  { name:'Greyson Hurt',        nickname:'G-MONEY',       phone:'5403033775', hometown:'Winchester, VA',       handicap:8.7,  venmoId:'Greyson-Hurt',      walkupSong:'Real American - Rick Derringer',        courseSong:'Dosas and Mimosas - Cherub' },
-  { name:'Eric Jackowski',      nickname:'POLISH HAMMER', phone:'5862068182', hometown:'Mt. Clemens, MI',      handicap:24,   venmoId:'Eric-Jackowski',    walkupSong:'Tokyo Drift - Teriyaki Boyz',            courseSong:'Beautiful - Akon' },
-  { name:'Chris Morehouse',nickname:'MOHOUSE',      phone:'5862432708', hometown:'Rochester, MI',        handicap:25,   venmoId:'Chris-Morehouse-6', walkupSong:'Flower - Moby',                         courseSong:'Good Time - Alan Jackson' },
-  { name:'Justin Blazo',        nickname:'BLAZO',         phone:'7343301712', hometown:'',                     handicap:17,   venmoId:'',                  walkupSong:'OMG - Usher',                           courseSong:'' },
-  { name:'Lee Ellsworth',  nickname:'PAWDAD',        phone:'9288928177', hometown:'Show Low, AZ',         handicap:15,   venmoId:'Lee-Ellsworth',     walkupSong:"I'm a Dog - Stephan Wilson Jr.",        courseSong:'The Stroke - Billy Squier' },
-  { name:'Zach Janik',          nickname:'THE VIKING',    phone:'4102418277', hometown:'Sparks Glencoe, MD',   handicap:22,   venmoId:'zmjanik',           walkupSong:'Valhalla Calling - Miracle of Sound',   courseSong:'' }
-];
-
-function seedPlayerProfiles() {
-  if (!isAdmin()) { showToast('🔒 Admin only'); return; }
-  const existing = Object.values(state.players).map(p => p.name.toLowerCase());
-  let added = 0;
-  SEED_PLAYERS.forEach(data => {
-    if (existing.includes(data.name.toLowerCase())) {
-      // Update existing player with profile data (don't overwrite team/photo)
-      const match = Object.values(state.players).find(p => p.name.toLowerCase() === data.name.toLowerCase());
-      if (match) {
-        Object.assign(match, { nickname:data.nickname, phone:data.phone, hometown:data.hometown,
-          handicap:data.handicap, venmoId:data.venmoId, walkupSong:data.walkupSong, courseSong:data.courseSong });
-        added++;
-      }
-      return;
-    }
-    const id = genId();
-    state.players[id] = { id, team:'unassigned', photoUrl:'', role:'', ...data };
-    added++;
-  });
-  if (added === 0) { showToast('Nothing to update'); return; }
-  save('players', state.players);
-  renderRosters();
-  showToast(`✅ Updated ${added} player profile${added===1?'':'s'}`);
-}
-
 function renderRosters() {
   const players = Object.values(state.players);
   const all = players.length;
@@ -1607,10 +1566,6 @@ function renderRosters() {
     if ((a.team||'unassigned') > (b.team||'unassigned')) return 1;
     return a.name.localeCompare(b.name);
   });
-
-  // Show/hide seed button for admins
-  const seedBar = document.getElementById('seed-players-bar');
-  if (seedBar) seedBar.style.display = isAdmin() ? '' : 'none';
 
   container.innerHTML = filtered.map(p => {
     const team = p.team || 'unassigned';

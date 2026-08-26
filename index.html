@@ -1329,7 +1329,6 @@ function showPlayerProfile(playerId) {
   const fields = [
     p.hometown   ? `<div class="ppv-row"><span>🏡</span><div><div class="ppv-label">Hometown</div><div class="ppv-val">${p.hometown}</div></div></div>` : '',
     p.handicap != null ? `<div class="ppv-row"><span>⛳</span><div><div class="ppv-label">Handicap</div><div class="ppv-val">${p.handicap}</div></div></div>` : '',
-    p.phone      ? `<div class="ppv-row"><span>📱</span><div><div class="ppv-label">Phone</div><a href="tel:${p.phone}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">${p.phone}</a></div></div>` : '',
     p.venmoId    ? `<div class="ppv-row"><span>💸</span><div><div class="ppv-label">Venmo</div><a href="venmo://paycharge?txn=pay&recipients=${p.venmoId}" class="ppv-val" style="color:var(--gold);text-decoration:none;font-weight:700;display:block;">@${p.venmoId}</a></div></div>` : '',
     p.walkupSong ? `<div class="ppv-row"><span>🎤</span><div><div class="ppv-label">Walk-up Song</div><div class="ppv-val" style="font-size:13px;">${p.walkupSong}</div></div></div>` : '',
   ].filter(Boolean).join('');

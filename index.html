@@ -2935,15 +2935,18 @@ function saveMatchup() {
     return;
   }
 
+  // Being in two matchups is almost always a mistake, but it must stay
+  // overridable: if the round already contains an overlap, a hard block would
+  // make both matchups impossible to edit back into a valid state.
   const picked = [...michPlayers, ...supPlayers];
   const others = Object.values(state.matchups[editingMatchupRoundId] || {})
     .filter(m => m.id !== editingMatchupId);
-  for (const other of others) {
-    const clash = picked.find(id => (other.michigan||[]).includes(id) || (other.superior||[]).includes(id));
-    if (clash) {
-      showToast('⚠️ ' + (state.players[clash]?.name || 'That player') + ' is already in another matchup this round');
-      return;
-    }
+  const clashes = [...new Set(picked.filter(id =>
+    others.some(o => (o.michigan||[]).includes(id) || (o.superior||[]).includes(id))
+  ))].map(id => state.players[id]?.name || 'A player');
+  if (clashes.length) {
+    const who = clashes.length === 1 ? clashes[0] + ' is' : clashes.join(', ') + ' are';
+    if (!confirm(who + ' already in another matchup this round.\n\nSave anyway?')) return;
   }
 
   const id = editingMatchupId || genId();

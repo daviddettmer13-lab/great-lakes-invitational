@@ -2763,7 +2763,10 @@ function updatePlayerMapMarkers(locs) {
   Object.entries(locs).forEach(([uid, loc]) => {
     if (now - loc.ts > STALE_MS) return;
     const isMe = currentUser && uid === currentUser.id;
-    const teamColor = loc.team === 'michigan' ? '#2A9A54' : loc.team === 'superior' ? '#2866C4' : '#888';
+    // loc.team is stamped when the ping is written, so someone who was unassigned
+    // then keeps a stale team until they re-share. Resolve from the roster instead.
+    const locTeam = state.players[uid]?.team || loc.team;
+    const teamColor = locTeam === 'michigan' ? '#2A9A54' : locTeam === 'superior' ? '#2866C4' : '#888';
     const initials = (loc.name||'?').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const size = isMe ? 36 : 30;
     const icon = L.divIcon({
@@ -2781,7 +2784,7 @@ function updatePlayerMapMarkers(locs) {
     } else {
       playerMarkers[uid] = L.marker([loc.lat, loc.lng], { icon })
         .addTo(leafletMap)
-        .bindPopup(`<b>${loc.name}</b><br><span style="color:${teamColor}">${loc.team==='michigan'?'Team Michigan':'Lake Superior'}</span>`);
+        .bindPopup(`<b>${loc.name}</b><br><span style="color:${teamColor}">${teamName(locTeam)}</span>`);
     }
   });
 }
@@ -2825,7 +2828,7 @@ function pushMyLocation(pos) {
     lat: pos.coords.latitude,
     lng: pos.coords.longitude,
     name: currentUser.name,
-    team: currentUser.team || 'unassigned',
+    team: player?.team || currentUser.team || 'unassigned',
     photoUrl: player?.photoUrl || null,
     ts: Date.now()
   });
@@ -3388,7 +3391,7 @@ function sendChatMessage() {
     id: genId(),
     userId: currentUser.id,
     name: currentUser.name,
-    team: currentUser.team || 'unassigned',
+    team: state.players[currentUser.id]?.team || currentUser.team || 'unassigned',
     text,
     ts: Date.now()
   };
@@ -3408,7 +3411,9 @@ function renderChat() {
       ...(state.bets || []).map(b => ({...b, _type: 'bet'}))
     ].sort((a,b) => a.ts - b.ts);
   } else {
-    items = state.messages.filter(m => m.team === chatFilter).map(m => ({...m, _type: 'message'}));
+    items = state.messages
+      .filter(m => (state.players[m.userId]?.team || m.team) === chatFilter)
+      .map(m => ({...m, _type: 'message'}));
   }
 
   const container = document.getElementById('chat-messages');
@@ -3501,7 +3506,9 @@ function createBet() {
   if (!amount || amount <= 0) { showToast('💰 Enter a valid amount'); return; }
 
   const participants = [
-    { id: currentUser.id, name: currentUser.name, team: currentUser.team || 'unassigned', accepted: true, declined: false },
+    { id: currentUser.id, name: currentUser.name,
+      team: state.players[currentUser.id]?.team || currentUser.team || 'unassigned',
+      accepted: true, declined: false },
     ...Array.from(selectedBetParticipants).map(id => {
       const p = state.players[id];
       return { id, name: p.name, team: p.team || 'unassigned', accepted: false, declined: false };

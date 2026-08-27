@@ -283,6 +283,10 @@ input,textarea{font-family:inherit;outline:none;}
 #caddy-btn{position:fixed;bottom:calc(var(--nav-h) + 14px);right:14px;z-index:1500;width:58px;height:58px;border-radius:50%;background:#000;border:2.5px solid var(--gold);cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.8),0 0 0 4px rgba(201,168,76,.2);overflow:hidden;padding:0;transition:transform .15s;-webkit-tap-highlight-color:transparent;}
 #caddy-btn img{width:100%;height:130%;object-fit:cover;object-position:center 8%;display:block;}
 #caddy-btn:active{transform:scale(.93);}
+/* On the chat tab the composer sits bottom-right too, and the caddy button
+   covered the send button. Lift both the button and its panel clear of it. */
+body.on-chat #caddy-btn{bottom:calc(var(--nav-h) + 76px);}
+body.on-chat #caddy-panel{bottom:calc(var(--nav-h) + 140px);height:min(430px,calc(100vh - var(--nav-h) - 200px));}
 #caddy-panel{position:fixed;bottom:calc(var(--nav-h) + 78px);right:14px;z-index:1499;width:320px;max-width:calc(100vw - 28px);height:430px;background:var(--bg2);border:1px solid var(--border);border-radius:18px;display:none;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.8);overflow:hidden;transform-origin:bottom right;}
 #caddy-panel.open{display:flex;}
 #caddy-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
@@ -315,7 +319,11 @@ input,textarea{font-family:inherit;outline:none;}
 
 /* ── CHAT PAGE ───────────────────────────────────── */
 #page-chat{padding:0;display:none;flex-direction:column;}
-#page-chat.active{display:flex;}
+/* .content is position:relative, so filling it exactly keeps the message list
+   scrolling internally and pins the composer to the bottom of the visible area.
+   Without this the chat page grew to fit its messages and the send button ended
+   up below the fold. */
+#page-chat.active{display:flex;position:absolute;inset:0;}
 .chat-header{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .chat-team-toggle{display:flex;gap:6px;}
 .chat-toggle-btn{flex:1;padding:7px;border-radius:var(--radius-sm);font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);text-transform:uppercase;letter-spacing:.5px;transition:all .15s;}
@@ -1440,6 +1448,7 @@ function switchTab(tab) {
     return;
   }
   currentTab = tab;
+  document.body.classList.toggle('on-chat', tab === 'chat');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');

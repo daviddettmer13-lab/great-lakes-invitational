@@ -2923,6 +2923,26 @@ function saveMatchup() {
     showToast('Select at least one player per team'); return;
   }
 
+  // The dropdowns list every player on a team, so the same person can be picked
+  // twice, or slotted into a second matchup in the same round. Neither is legal.
+  const dupeIn = list => list.find((id, i) => list.indexOf(id) !== i);
+  const dupe = dupeIn(michPlayers) || dupeIn(supPlayers);
+  if (dupe) {
+    showToast('⚠️ ' + (state.players[dupe]?.name || 'That player') + ' is picked twice');
+    return;
+  }
+
+  const picked = [...michPlayers, ...supPlayers];
+  const others = Object.values(state.matchups[editingMatchupRoundId] || {})
+    .filter(m => m.id !== editingMatchupId);
+  for (const other of others) {
+    const clash = picked.find(id => (other.michigan||[]).includes(id) || (other.superior||[]).includes(id));
+    if (clash) {
+      showToast('⚠️ ' + (state.players[clash]?.name || 'That player') + ' is already in another matchup this round');
+      return;
+    }
+  }
+
   const id = editingMatchupId || genId();
   if (!state.matchups[editingMatchupRoundId]) state.matchups[editingMatchupRoundId] = {};
   state.matchups[editingMatchupRoundId][id] = { id, michigan:michPlayers, superior:supPlayers };

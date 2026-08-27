@@ -3171,7 +3171,9 @@ function calcAllPoints() {
   // team stamped on the entry: a CTP recorded before the draft (or before a
   // player is moved) would otherwise be stuck on 'unassigned' and score nothing.
   const ctpTeamOf = c => (state.players[c.playerId] && state.players[c.playerId].team) || c.team;
-  const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId && c.distance);
+  // A CTP is won by being closest, not by anyone writing the number down. The
+  // distance is an optional record, so naming a player is enough to score.
+  const ctpEntries = Object.values(state.ctp).filter(c => c && c.playerId);
   ctpEntries.forEach(c => {
     const t = ctpTeamOf(c);
     if (t==='michigan') mPts+=0.5;
@@ -3201,7 +3203,7 @@ function getPlayerIndividualPoints(playerId) {
     });
   });
   // CTP — only count if distance is also recorded
-  Object.values(state.ctp).forEach(c => { if (c && c.playerId===playerId && c.distance) pts+=0.5; });
+  Object.values(state.ctp).forEach(c => { if (c && c.playerId===playerId) pts+=0.5; });
   return Math.round(pts*10)/10;
 }
 

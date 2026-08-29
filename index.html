@@ -1053,7 +1053,8 @@ const ROUNDS = [
   },
   {
     id:'round4', name:'Round 4', course:'Grand Traverse Resort',
-    date:'Sat Aug 29', teeTime:'10:50 AM', format:'singles_match', formatLabel:'Singles Match Play',
+    date:'Sat Aug 29', teeTime:'10:50 AM', format:'team_match', formatLabel:'2v2 Match Play',
+    matchPoints:2, marginBonus:true,
     tee:'Blue', rating:'71.2', slope:'136',
     // Blue tee: Par 70. Par 3s: holes 6, 8, 10, 16
     par:    [4,  5,  4,  4,  4,  3,  4,  3,  5,   3,  4,  4,  4,  4,  4,  3,  4,  4],
@@ -1900,7 +1901,8 @@ function openScorecard(roundId, matchupId) {
 
 // Formats where the whole team shares one score per hole (no individual entries)
 function isTeamScoreFormat(round) {
-  return round && (round.format === 'scramble' || round.format === 'alt_shot');
+  return round && (round.format === 'scramble' || round.format === 'alt_shot'
+                || round.format === 'team_match');
 }
 
 function isMatchComplete(matchup, scores, round) {
@@ -3146,14 +3148,16 @@ function calcAllPoints() {
         const diff = Math.abs(mWins-sWins);
         if (diff > biggestDiff) { biggestDiff=diff; biggestTeam=mWins>sWins?'michigan':'superior'; }
       });
-      mPts += mMatchWins; sPts += sMatchWins;
-      if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
-      if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
+      // Each round declares what a match is worth (Round 4 pays 2).
+      const mp = round.matchPoints || 1;
+      mPts += mMatchWins*mp; sPts += sMatchWins*mp;
+      if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins*mp,s:0});
+      if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins*mp});
       // Aggregate only when all matchups in round are finalized
       if (finalizedMatchups.length === matchups.length && finalizedMatchups.length > 0) {
         if (mAgg > sAgg) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
         else if (sAgg > mAgg) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
-        if (round.format==='singles_match' && biggestTeam) {
+        if (round.marginBonus && biggestTeam) {
           if (biggestTeam==='michigan') { mPts++; breakdown.push({label:'Round 4 Largest Margin',m:1,s:0}); }
           else { sPts++; breakdown.push({label:'Round 4 Largest Margin',m:0,s:1}); }
         }

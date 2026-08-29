@@ -3098,7 +3098,7 @@ function calcAllPoints() {
     const finalizedMatchups = matchups.filter(m => !!state.completedMatches[m.id]);
 
     if (round.format === 'stableford') {
-      let mMatchWins=0, sMatchWins=0, mTotalStable=0, sTotalStable=0;
+      let mMatchWins=0, sMatchWins=0, mAgg=0, sAgg=0;
       finalizedMatchups.forEach(m => {
         const sc = state.scores[m.id]||{holes:{}};
         let mHoles=0, sHoles=0;
@@ -3121,16 +3121,17 @@ function calcAllPoints() {
         }
         if (mHoles > sHoles) mMatchWins++;
         else if (sHoles > mHoles) sMatchWins++;
-        mTotalStable += calcTeamStableford(m.michigan||[], sc, round.par);
-        sTotalStable += calcTeamStableford(m.superior||[], sc, round.par);
+        mAgg += mHoles; sAgg += sHoles;
       });
       mPts += mMatchWins; sPts += sMatchWins;
       if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins,s:0});
       if (sMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:0,s:sMatchWins});
       // Aggregate only when all matchups in round are finalized
+      // Aggregate is holes won, same as every other format -- not total Stableford
+      // points. A team can pile up points on a few holes and still lose the day.
       if (finalizedMatchups.length === matchups.length && finalizedMatchups.length > 0) {
-        if (mTotalStable > sTotalStable) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
-        else if (sTotalStable > mTotalStable) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
+        if (mAgg > sAgg) { mPts++; breakdown.push({label:`${round.name} Aggregate`,m:1,s:0}); }
+        else if (sAgg > mAgg) { sPts++; breakdown.push({label:`${round.name} Aggregate`,m:0,s:1}); }
       }
     } else {
       // scramble, alt_shot, singles_match — hole-by-hole raw score comparison

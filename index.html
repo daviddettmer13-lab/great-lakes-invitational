@@ -3137,7 +3137,7 @@ function calcAllPoints() {
       }
     } else {
       // scramble, alt_shot, singles_match — hole-by-hole raw score comparison
-      let mAgg=0, sAgg=0, mMatchWins=0, sMatchWins=0;
+      let mAgg=0, sAgg=0, mMatchWins=0, sMatchWins=0, halved=0;
       let biggestDiff=0, biggestTeam=null;
       finalizedMatchups.forEach(m => {
         const sc = state.scores[m.id]||{holes:{}};
@@ -3145,10 +3145,12 @@ function calcAllPoints() {
         mAgg += mWins; sAgg += sWins;
         if (mWins > sWins) mMatchWins++;
         else if (sWins > mWins) sMatchWins++;
+        else if (mWins || sWins) halved++;   // all square after a played match
         const diff = Math.abs(mWins-sWins);
         if (diff > biggestDiff) { biggestDiff=diff; biggestTeam=mWins>sWins?'michigan':'superior'; }
       });
       // Each round declares what a match is worth (Round 4 pays 2).
+      // A halved match pays nobody -- an all-square result wins no points.
       const mp = round.matchPoints || 1;
       mPts += mMatchWins*mp; sPts += sMatchWins*mp;
       if (mMatchWins) breakdown.push({label:`${round.name} Match Wins`,m:mMatchWins*mp,s:0});
